@@ -52,8 +52,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/flutter_ffmpeg_min-gpl"
-      ref: "v0.1.1"
-      resolved-ref: ca1d2901c70cf856d3a8a46dedc388e3bfad5c63
+      ref: development
+      resolved-ref: "117b3a0b84f103facb8789e74c3e6545f45814e1"
       url: "git://github.com/tanersener/flutter-ffmpeg.git"
     source: git
     version: "0.1.1"
