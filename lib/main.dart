@@ -16,6 +16,21 @@ import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 
 void main() => runApp(MyApp());
 
+Future<int> getNewId() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  var key = 'num';
+  int val = prefs.getInt(key);
+  if (val == null) {
+    val = 0;
+  }
+  val++;
+  await prefs.setInt(key, val);
+  return val;
+}
+setNewId() async {
+
+}
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -186,7 +201,7 @@ class _TakePhotoState extends State<TakePhoto> {
     ImageRotation rotation = rotationIntToImageRotation(
       description.sensorOrientation,
     );
-    _camera = CameraController(description, ResolutionPreset.low
+    _camera = CameraController(description, ResolutionPreset.medium
 //      defaultTargetPlatform == TargetPlatform.iOS
 //          ? ResolutionPreset.low
 //          : ResolutionPreset.medium,
@@ -263,6 +278,21 @@ class _TakePhotoState extends State<TakePhoto> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final Directory dir = await getApplicationDocumentsDirectory();
+          int i = await getNewId();
+          if(_camera.value.isStreamingImages)
+            await _camera.stopImageStream();
+          if (_camera.value.isTakingPicture) {
+            // A capture is already pending, do nothing.
+            return null;
+          }
+          var path = '${dir.path}/image${i.toString().padLeft(3, '0')}.jpg';
+          await _camera.takePicture(path);
+        },
+        child: Icon(Icons.add_a_photo),
+      ),
       body: _buildImage(),
     );
   }
@@ -292,18 +322,6 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  Future<int> getNewId() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var key = 'num';
-    int val = prefs.getInt(key);
-    if (val == null) {
-      val = 0;
-    }
-    val++;
-    await prefs.setInt(key, val);
-    return val;
-  }
-
   void addPhoto(BuildContext context) async {
     try {
       Navigator.of(context)
@@ -329,6 +347,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void makeMovie() async {
     try {
       final Directory dir = await getApplicationDocumentsDirectory();
+      var list = await dir.list().toList();
       var videoname = '${dir.path}/test.mp4';
 
       final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
@@ -340,7 +359,7 @@ class _MyHomePageState extends State<MyHomePage> {
 //      var packageList = await _flutterFFmpeg.getExternalLibraries();
 //      packageList.forEach((value) => print("External library: $value"));
       var res = await _flutterFFmpeg.execute(
-          '-y -r 1 -i ${dir.path}/image%d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest $videoname');
+          '-y -r 1 -i ${dir.path}/image%03d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest $videoname');
       var info = await _flutterFFmpeg.getMediaInformation(videoname);
       setState(() {
         log.add(info.toString());
