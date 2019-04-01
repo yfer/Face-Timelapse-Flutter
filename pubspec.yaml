@@ -37,6 +37,8 @@ dependencies:
   permission_handler: '^2.2.0'
   shared_preferences: ^0.5.1+2
 
+  camera: ^0.4.3+2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

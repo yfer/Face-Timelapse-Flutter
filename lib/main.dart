@@ -9,6 +9,7 @@ import 'package:video_player/video_player.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:chewie/chewie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:camera/camera.dart';
 
 void main() => runApp(MyApp());
 
@@ -21,6 +22,93 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: MyHomePage(title: 'Face Timelapse'),
+    );
+  }
+}
+
+class TakePhoto extends StatefulWidget {
+  @override
+  _TakePhotoState createState() => _TakePhotoState();
+}
+
+class _TakePhotoState extends State<TakePhoto> {
+  CameraController _camera;
+  CameraLensDirection _direction = CameraLensDirection.front;
+//  Detector _currentDetector = Detector.barcode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  Future<CameraDescription> getCamera(CameraLensDirection dir) async {
+    return await availableCameras().then(
+      (List<CameraDescription> cameras) => cameras.firstWhere(
+            (CameraDescription camera) => camera.lensDirection == dir,
+          ),
+    );
+  }
+
+  void _initializeCamera() async {
+    CameraDescription description = await getCamera(_direction);
+//    ImageRotation rotation = rotationIntToImageRotation(
+//      description.sensorOrientation,
+//    );
+    _camera = CameraController(description, ResolutionPreset.high
+//      defaultTargetPlatform == TargetPlatform.iOS
+//          ? ResolutionPreset.low
+//          : ResolutionPreset.medium,
+        );
+    await _camera.initialize();
+    setState(() {
+
+    });
+
+//    _camera.startImageStream((CameraImage image) {
+//      if (_isDetecting) return;
+//
+//      _isDetecting = true;
+//
+//      detect(image, _getDetectionMethod(), rotation).then(
+//            (dynamic result) {
+//          setState(() {
+//            _scanResults = result;
+//          });
+//
+//          _isDetecting = false;
+//        },
+//      ).catchError(
+//            (_) {
+//          _isDetecting = false;
+//        },
+//      );
+//    });
+  }
+
+  Widget _buildImage() {
+    return Container(
+      constraints: const BoxConstraints.expand(),
+      child: _camera == null
+          ? const Center(
+              child: Text(
+                'Initializing Camera...',
+              ),
+            )
+          : Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                CameraPreview(_camera),
+//          _buildResults(),
+              ],
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _buildImage(),
     );
   }
 }
@@ -49,29 +137,32 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  Future<int> getNewId() async{
+  Future<int> getNewId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var key = 'num';
     int val = prefs.getInt(key);
-    if(val == null){
+    if (val == null) {
       val = 0;
     }
     val++;
     await prefs.setInt(key, val);
     return val;
   }
-  void addPhoto() async {
+
+  void addPhoto(BuildContext context) async {
     try {
-      final Directory dir = await getApplicationDocumentsDirectory();
-      var image = await ImagePicker.pickImage(source: ImageSource.camera);
-      int i = await getNewId();
-      var newImage = await image.copy('${dir.path}/image${i}.jpg');
-      setState(() {
-        log.add('${dir.path}/image${i}.jpg');
-      });
-//      _scaffoldKey.currentState.showSnackBar(SnackBar(
-//        content: Text('${dir.path}/image${i}.jpg'),
-//      ));
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (b) => TakePhoto()));
+//      final Directory dir = await getApplicationDocumentsDirectory();
+//      var image = await ImagePicker.pickImage(source: ImageSource.camera);
+//      int i = await getNewId();
+//      var newImage = await image.copy('${dir.path}/image${i}.jpg');
+//      setState(() {
+//        log.add('${dir.path}/image${i}.jpg');
+//      });
+////      _scaffoldKey.currentState.showSnackBar(SnackBar(
+////        content: Text('${dir.path}/image${i}.jpg'),
+////      ));
     } on Exception catch (ex) {
       setState(() {
         log.add(ex.toString());
@@ -86,7 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
       var videoname = '${dir.path}/test.mp4';
 
       final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
-      _flutterFFmpeg.enableLogCallback((i,s){
+      _flutterFFmpeg.enableLogCallback((i, s) {
         setState(() {
           log.add(s);
         });
@@ -106,24 +197,27 @@ class _MyHomePageState extends State<MyHomePage> {
 //      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(ex.toString())));
     }
   }
+
   void resetMovie() async {
     videoPlayerController?.dispose();
     chewieController?.dispose();
     videoPlayerController = null;
     chewieController = null;
-    setState(() {
+    setState(() {});
+  }
 
-    });
-  }
   void shareMovie() async {
-      var permissions = await PermissionHandler().requestPermissions([PermissionGroup.storage]);
-      final Directory dir = await getApplicationDocumentsDirectory();
-      var temp = await getExternalStorageDirectory(); //todo: this is not available in ios
-      var file = File.fromUri(Uri.file('${dir.path}/test.mp4'));
-      await file.copy('${temp.path}/test.mp4');
-      var videoname = '${temp.path}/test.mp4';
-      ShareExtend.share(videoname, "video");
+    var permissions =
+        await PermissionHandler().requestPermissions([PermissionGroup.storage]);
+    final Directory dir = await getApplicationDocumentsDirectory();
+    var temp =
+        await getExternalStorageDirectory(); //todo: this is not available in ios
+    var file = File.fromUri(Uri.file('${dir.path}/test.mp4'));
+    await file.copy('${temp.path}/test.mp4');
+    var videoname = '${temp.path}/test.mp4';
+    ShareExtend.share(videoname, "video");
   }
+
   void playMovie() async {
     try {
       videoPlayerController?.dispose();
@@ -205,26 +299,18 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.add_a_photo),
-            onPressed: addPhoto
-          ),
-          IconButton(
-            icon: Icon(Icons.movie_creation),
-            onPressed: makeMovie
-          ),
-          IconButton(
-            icon: Icon(Icons.play_arrow),
-            onPressed: playMovie
-          ),
-          IconButton(
-              icon: Icon(Icons.share),
-              onPressed: shareMovie
-          )
+              icon: Icon(Icons.add_a_photo),
+              onPressed: () => addPhoto(context)),
+          IconButton(icon: Icon(Icons.movie_creation), onPressed: makeMovie),
+          IconButton(icon: Icon(Icons.play_arrow), onPressed: playMovie),
+          IconButton(icon: Icon(Icons.share), onPressed: shareMovie)
         ],
       ),
       body: Center(
         child: chewieController == null
-            ? ListView(children: log.map((e)=>Text(e)).toList(),)
+            ? ListView(
+                children: log.map((e) => Text(e)).toList(),
+              )
             : Chewie(
                 controller: chewieController,
               ),
