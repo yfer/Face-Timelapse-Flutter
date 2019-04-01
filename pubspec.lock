@@ -51,9 +51,9 @@ packages:
   flutter_ffmpeg:
     dependency: "direct main"
     description:
-      path: "packages/flutter_ffmpeg_min-gpl"
-      ref: development
-      resolved-ref: "117b3a0b84f103facb8789e74c3e6545f45814e1"
+      path: "packages/flutter_ffmpeg_min-gpl_lts"
+      ref: "v0.1.1"
+      resolved-ref: ca1d2901c70cf856d3a8a46dedc388e3bfad5c63
       url: "git://github.com/tanersener/flutter-ffmpeg.git"
     source: git
     version: "0.1.1"
@@ -139,6 +139,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.6.0+1"
+  shared_preferences:
+    dependency: "direct main"
+    description:
+      name: shared_preferences
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.1+2"
   sky_engine:
     dependency: transitive
     description: flutter

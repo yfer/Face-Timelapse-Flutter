@@ -29,11 +29,13 @@ dependencies:
   flutter_ffmpeg:
     git:
       url: git://github.com/tanersener/flutter-ffmpeg.git
-      ref: development
-      path: packages/flutter_ffmpeg_min-gpl
+      ref: v0.1.1
+      path: packages/flutter_ffmpeg_min-gpl_lts
+
   video_player: ^0.10.0+4
   chewie: ^0.9.6
   permission_handler: '^2.2.0'
+  shared_preferences: ^0.5.1+2
 
 dev_dependencies:
   flutter_test:
