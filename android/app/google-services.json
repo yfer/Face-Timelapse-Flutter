@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "21938190234",
+    "firebase_url": "https://face-timelapse.firebaseio.com",
+    "project_id": "face-timelapse",
+    "storage_bucket": "face-timelapse.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:21938190234:android:c34c5998e22f0db6",
+        "android_client_info": {
+          "package_name": "ru.yfer.face_timelapse"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "21938190234-m03cgdeov91ne5jnevcb887b5oq90b8q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv0DA4n_QGCSM6v5Xz74Wl0mTVQSW2xlA"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
