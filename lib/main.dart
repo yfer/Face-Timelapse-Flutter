@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:share/share.dart';
+import 'package:share_extend/share_extend.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
@@ -115,6 +115,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     });
   }
+  void shareMovie() async {
+      var permissions = await PermissionHandler().requestPermissions([PermissionGroup.storage]);
+      final Directory dir = await getApplicationDocumentsDirectory();
+      var temp = await getExternalStorageDirectory(); //todo: this is not available in ios
+      var file = File.fromUri(Uri.file('${dir.path}/test.mp4'));
+      await file.copy('${temp.path}/test.mp4');
+      var videoname = '${temp.path}/test.mp4';
+      ShareExtend.share(videoname, "video");
+  }
   void playMovie() async {
     try {
       videoPlayerController?.dispose();
@@ -206,6 +215,10 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: Icon(Icons.play_arrow),
             onPressed: playMovie
+          ),
+          IconButton(
+              icon: Icon(Icons.share),
+              onPressed: shareMovie
           )
         ],
       ),

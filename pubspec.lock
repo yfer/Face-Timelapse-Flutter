@@ -132,13 +132,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.0.5"
-  share:
+  share_extend:
     dependency: "direct main"
     description:
-      name: share
+      name: share_extend
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.6.0+1"
+    version: "1.0.8"
   shared_preferences:
     dependency: "direct main"
     description:
