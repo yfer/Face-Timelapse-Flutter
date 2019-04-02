@@ -32,49 +32,47 @@ class MyApp extends StatelessWidget {
 }
 
 class FaceDetectorPainter extends CustomPainter {
-  FaceDetectorPainter(this.imageSize, this.faces);
+  FaceDetectorPainter(this.iS, this.fs);
 
-  Size imageSize;
-  List<Face> faces;
+  Size iS;
+  List<Face> fs;
 
   @override
   void paint(Canvas canvas, Size size) {
-    var paint = Paint()
+    var p = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..color = Colors.red;
 
-    var sX = size.width / imageSize.width;
-    var sY = size.height / imageSize.height;
+    var sX = size.width / iS.width;
+    var sY = size.height / iS.height;
 
-    for (var face in faces) {
+    for (var face in fs) {
       for (var lm in FaceLandmarkType.values) {
         var mark = face.getLandmark(lm);
         if (mark != null)
           canvas.drawCircle(
-              Offset((imageSize.width - mark.position.dx) * sX,
+              Offset((iS.width - mark.position.dx) * sX,
                   mark.position.dy * sY),
               10.0,
-              paint);
+              p);
       }
 
-      var rect = face.boundingBox;
+      var r = face.boundingBox;
       canvas.drawRect(
         Rect.fromLTRB(
-          (imageSize.width - rect.left) * sX,
-          rect.top.toDouble() * sY,
-          (imageSize.width - rect.right) * sX,
-          rect.bottom.toDouble() * sY,
+          (iS.width - r.left) * sX,
+          r.top.toDouble() * sY,
+          (iS.width - r.right) * sX,
+          r.bottom.toDouble() * sY,
         ),
-        paint,
+        p,
       );
     }
   }
 
   @override
-  bool shouldRepaint(FaceDetectorPainter oldDelegate) {
-    return oldDelegate.imageSize != imageSize || oldDelegate.faces != faces;
-  }
+  bool shouldRepaint(FaceDetectorPainter old) => old != this;
 }
 
 typedef HandleDetection = Future<dynamic> Function(FirebaseVisionImage image);
@@ -86,58 +84,56 @@ class TakePhoto extends StatefulWidget {
 
 class _TakePhotoState extends State<TakePhoto> {
   CameraController cam;
-  bool det = false;
+  var det = false;
   List<Face> _faces;
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    initCam();
   }
 
   Uint8List concatenatePlanes(List<Plane> planes) {
-    var allBytes = WriteBuffer();
-    planes.forEach((Plane plane) => allBytes.putUint8List(plane.bytes));
-    return allBytes.done().buffer.asUint8List();
+    var wb = WriteBuffer();
+    planes.forEach((Plane plane) => wb.putUint8List(plane.bytes));
+    return wb.done().buffer.asUint8List();
   }
 
   FirebaseVisionImageMetadata buildMetaData(
-    CameraImage image,
-    ImageRotation rotation,
+    CameraImage i,
+    ImageRotation r,
   ) {
     return FirebaseVisionImageMetadata(
-      rawFormat: image.format.raw,
-      size: Size(image.width.toDouble(), image.height.toDouble()),
-      rotation: rotation,
-      planeData: image.planes.map(
-        (Plane plane) {
-          return FirebaseVisionImagePlaneMetadata(
-            bytesPerRow: plane.bytesPerRow,
-            height: plane.height,
-            width: plane.width,
-          );
-        },
-      ).toList(),
+      rawFormat: i.format.raw,
+      size: Size(i.width.toDouble(), i.height.toDouble()),
+      rotation: r,
+      planeData: i.planes
+          .map((Plane plane) => FirebaseVisionImagePlaneMetadata(
+                bytesPerRow: plane.bytesPerRow,
+                height: plane.height,
+                width: plane.width,
+              ))
+          .toList(),
     );
   }
 
   Future<dynamic> detect(
-    CameraImage image,
-    HandleDetection handleDetection,
-    ImageRotation rotation,
+    CameraImage i,
+    HandleDetection hd,
+    ImageRotation r,
   ) async {
-    return handleDetection(
+    return hd(
       FirebaseVisionImage.fromBytes(
-        concatenatePlanes(image.planes),
-        buildMetaData(image, rotation),
+        concatenatePlanes(i.planes),
+        buildMetaData(i, r),
       ),
     );
   }
 
-  void _initializeCamera() async {
-    var description = (await availableCameras())
+  void initCam() async {
+    var d = (await availableCameras())
         .firstWhere((c) => c.lensDirection == CameraLensDirection.front);
-    cam = CameraController(description, ResolutionPreset.medium);
+    cam = CameraController(d, ResolutionPreset.medium);
     await cam.initialize();
     setState(() {});
 
@@ -163,7 +159,7 @@ class _TakePhotoState extends State<TakePhoto> {
     });
   }
 
-  Widget _buildResults() {
+  Widget res() {
     const noResultsText = const Text('No results!');
 
     if (_faces == null || cam == null || !cam.value.isInitialized) {
@@ -173,25 +169,6 @@ class _TakePhotoState extends State<TakePhoto> {
 
     return CustomPaint(
       painter: FaceDetectorPainter(imageSize, _faces),
-    );
-  }
-
-  Widget _buildImage() {
-    return Container(
-      constraints: const BoxConstraints.expand(),
-      child: cam == null
-          ? const Center(
-              child: Text(
-                'Initializing Camera...',
-              ),
-            )
-          : Stack(
-              fit: StackFit.expand,
-              children: [
-                CameraPreview(cam),
-                _buildResults(),
-              ],
-            ),
     );
   }
 
@@ -210,12 +187,26 @@ class _TakePhotoState extends State<TakePhoto> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: takePicture,
-        child: Icon(Icons.add_a_photo),
-      ),
-      body: _buildImage(),
-    );
+        floatingActionButton: FloatingActionButton(
+          onPressed: takePicture,
+          child: Icon(Icons.add_a_photo),
+        ),
+        body: Container(
+          constraints: const BoxConstraints.expand(),
+          child: cam == null
+              ? const Center(
+                  child: Text(
+                    'Initializing Camera...',
+                  ),
+                )
+              : Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CameraPreview(cam),
+                    res(),
+                  ],
+                ),
+        ));
   }
 }
 
