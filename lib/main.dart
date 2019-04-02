@@ -9,24 +9,10 @@ import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:video_player/video_player.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:chewie/chewie.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 
 void main() => runApp(MyApp());
-
-Future<int> getNewId() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  var key = 'num';
-  int val = prefs.getInt(key);
-  if (val == null) {
-    val = 0;
-  }
-  val++;
-  await prefs.setInt(key, val);
-  return val;
-}
-
 
 class MyApp extends StatelessWidget {
   @override
@@ -70,7 +56,8 @@ class FaceDetectorPainter extends CustomPainter {
     final double scaleX = widgetSize.width / imageSize.width;
     final double scaleY = widgetSize.height / imageSize.height;
 
-    return Offset((imageSize.width - offset.dx) * scaleX, offset.dy * scaleY);//offset.scale(scaleX, scaleY);
+    return Offset((imageSize.width - offset.dx) * scaleX,
+        offset.dy * scaleY); //offset.scale(scaleX, scaleY);
   }
 
   @override
@@ -267,9 +254,9 @@ class _TakePhotoState extends State<TakePhoto> {
 
   takePicture() async {
     var d = await getPhotoDir();
-    int i = await getNewId();
-    if(_camera.value.isStreamingImages)
-      await _camera.stopImageStream();
+    //todo: getting id like this is not resilient to user actions in directory
+    int i = d.listSync().length;
+    if (_camera.value.isStreamingImages) await _camera.stopImageStream();
     if (_camera.value.isTakingPicture) {
       return null;
     }
@@ -297,6 +284,7 @@ class MyHomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
+
 Future<Directory> getDataDir() async {
   await PermissionHandler().requestPermissions([PermissionGroup.storage]);
   //todo: this is not available in ios, should research more
@@ -305,6 +293,7 @@ Future<Directory> getDataDir() async {
   var list = ret.listSync();
   return ret;
 }
+
 Future<Directory> getPhotoDir() async {
   var d = await getDataDir();
   var ret = await Directory('${d.path}/photos').create();
@@ -334,30 +323,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void loadImages() async {
 //    (await getDataDir()).delete(recursive: true);
-//    SharedPreferences prefs = await SharedPreferences.getInstance();
-//    var key = 'num';
-//    prefs.setInt(key, 0);
 
     var dir = await getPhotoDir();
-//    var list = dir.listSync();//shorter
-    var list = await dir.list().map((e) => File(e.path)).toList();
+    var list = dir.listSync().map((e) => File(e.path)).toList();
     setState(() {
       images = list;
     });
   }
 
-  void addPhoto(BuildContext context) async {
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (b) => TakePhoto()));
-  }
-
   void makeMovie() async {
-      var d = await getDataDir();
-      var p = await getPhotoDir();
-      final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
-      await _flutterFFmpeg.execute(
-          '-y -r 1 -i ${p.path}/%03d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest ${d.path}/v.mp4');
-      var info = await _flutterFFmpeg.getMediaInformation('${d.path}/v.mp4');
+    var d = await getDataDir();
+    var p = await getPhotoDir();
+    var ff = new FlutterFFmpeg();
+    await ff.execute(
+        '-y -r 1 -i ${p.path}/%03d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest ${d.path}/v.mp4');
+//      var info = await ff.getMediaInformation('${d.path}/v.mp4');
   }
 
   void resetMovie() async {
@@ -366,11 +346,6 @@ class _MyHomePageState extends State<MyHomePage> {
     videoPlayerController = null;
     chewieController = null;
     setState(() {});
-  }
-
-  void shareMovie() async {
-    var d = await getDataDir();
-    ShareExtend.share('${d.path}/v.mp4', "video");
   }
 
   void playMovie() async {
@@ -397,17 +372,27 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: <Widget>[
           IconButton(
               icon: Icon(Icons.add_a_photo),
-              onPressed: () => addPhoto(context)),
+              onPressed: (){
+                Navigator.of(context).push(MaterialPageRoute(builder: (b) => TakePhoto()));
+              }),
           IconButton(icon: Icon(Icons.movie_creation), onPressed: makeMovie),
           IconButton(icon: Icon(Icons.play_arrow), onPressed: playMovie),
-          IconButton(icon: Icon(Icons.share), onPressed: shareMovie)
+          IconButton(icon: Icon(Icons.share), onPressed: () async{
+            var d = await getDataDir();
+            ShareExtend.share('${d.path}/v.mp4', "video");
+          })
         ],
       ),
       body: Center(
         child: chewieController == null
             ? GridView.count(
                 crossAxisCount: 2,
-                children: images.map((s)=>Image.file(s, filterQuality: FilterQuality.low,)).toList(),
+                children: images
+                    .map((s) => Image.file(
+                          s,
+                          filterQuality: FilterQuality.low,
+                        ))
+                    .toList(),
               )
             : Chewie(
                 controller: chewieController,

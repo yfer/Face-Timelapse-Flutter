@@ -35,7 +35,6 @@ dependencies:
   video_player: ^0.10.0+4
   chewie: ^0.9.6
   permission_handler: '^2.2.0'
-  shared_preferences: ^0.5.1+2
 
   camera: ^0.4.3+2
   firebase_ml_vision: ^0.6.0+2
