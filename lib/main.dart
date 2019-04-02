@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_extend/share_extend.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
 import 'package:video_player/video_player.dart';
@@ -27,9 +26,7 @@ Future<int> getNewId() async {
   await prefs.setInt(key, val);
   return val;
 }
-setNewId() async {
 
-}
 
 class MyApp extends StatelessWidget {
   @override
@@ -57,7 +54,6 @@ class FaceDetectorPainter extends CustomPainter {
   }) {
     final double scaleX = widgetSize.width / imageSize.width;
     final double scaleY = widgetSize.height / imageSize.height;
-
     return Rect.fromLTRB(
       (imageSize.width - rect.left) * scaleX,
       rect.top.toDouble() * scaleY,
@@ -85,7 +81,6 @@ class FaceDetectorPainter extends CustomPainter {
       ..color = Colors.red;
 
     for (Face face in faces) {
-//      face.getLandmark(Face)
       for (var lm in FaceLandmarkType.values) {
         var mark = face.getLandmark(lm);
         if (mark != null)
@@ -127,7 +122,6 @@ class _TakePhotoState extends State<TakePhoto> {
   bool _isDetecting = false;
   dynamic _scanResults;
   CameraLensDirection _direction = CameraLensDirection.front;
-//  Detector _currentDetector = Detector.barcode;
 
   @override
   void initState() {
@@ -201,11 +195,7 @@ class _TakePhotoState extends State<TakePhoto> {
     ImageRotation rotation = rotationIntToImageRotation(
       description.sensorOrientation,
     );
-    _camera = CameraController(description, ResolutionPreset.medium
-//      defaultTargetPlatform == TargetPlatform.iOS
-//          ? ResolutionPreset.low
-//          : ResolutionPreset.medium,
-        );
+    _camera = CameraController(description, ResolutionPreset.medium);
     await _camera.initialize();
     setState(() {});
 
@@ -275,22 +265,23 @@ class _TakePhotoState extends State<TakePhoto> {
     );
   }
 
+  takePicture() async {
+    var d = await getPhotoDir();
+    int i = await getNewId();
+    if(_camera.value.isStreamingImages)
+      await _camera.stopImageStream();
+    if (_camera.value.isTakingPicture) {
+      return null;
+    }
+    var path = '${d.path}/${i.toString().padLeft(3, '0')}.jpg';
+    await _camera.takePicture(path);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final Directory dir = await getApplicationDocumentsDirectory();
-          int i = await getNewId();
-          if(_camera.value.isStreamingImages)
-            await _camera.stopImageStream();
-          if (_camera.value.isTakingPicture) {
-            // A capture is already pending, do nothing.
-            return null;
-          }
-          var path = '${dir.path}/image${i.toString().padLeft(3, '0')}.jpg';
-          await _camera.takePicture(path);
-        },
+        onPressed: takePicture,
         child: Icon(Icons.add_a_photo),
       ),
       body: _buildImage(),
@@ -306,12 +297,25 @@ class MyHomePage extends StatefulWidget {
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
+Future<Directory> getDataDir() async {
+  await PermissionHandler().requestPermissions([PermissionGroup.storage]);
+  //todo: this is not available in ios, should research more
+  var d = await getExternalStorageDirectory();
+  var ret = await Directory('${d.path}/FaceTimelapse').create();
+  var list = ret.listSync();
+  return ret;
+}
+Future<Directory> getPhotoDir() async {
+  var d = await getDataDir();
+  var ret = await Directory('${d.path}/photos').create();
+  var list = ret.listSync();
+  return ret;
+}
 
 class _MyHomePageState extends State<MyHomePage> {
-  File _image;
   VideoPlayerController videoPlayerController;
   ChewieController chewieController;
-  List<String> log = [];
+  List<File> images = [];
 
   @override
   void dispose() {
@@ -322,54 +326,38 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    loadImages();
+  }
+
+  void loadImages() async {
+//    (await getDataDir()).delete(recursive: true);
+//    SharedPreferences prefs = await SharedPreferences.getInstance();
+//    var key = 'num';
+//    prefs.setInt(key, 0);
+
+    var dir = await getPhotoDir();
+//    var list = dir.listSync();//shorter
+    var list = await dir.list().map((e) => File(e.path)).toList();
+    setState(() {
+      images = list;
+    });
+  }
+
   void addPhoto(BuildContext context) async {
-    try {
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (b) => TakePhoto()));
-//      final Directory dir = await getApplicationDocumentsDirectory();
-//      var image = await ImagePicker.pickImage(source: ImageSource.camera);
-//      int i = await getNewId();
-//      var newImage = await image.copy('${dir.path}/image${i}.jpg');
-//      setState(() {
-//        log.add('${dir.path}/image${i}.jpg');
-//      });
-////      _scaffoldKey.currentState.showSnackBar(SnackBar(
-////        content: Text('${dir.path}/image${i}.jpg'),
-////      ));
-    } on Exception catch (ex) {
-      setState(() {
-        log.add(ex.toString());
-      });
-//      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(ex.toString())));
-    }
   }
 
   void makeMovie() async {
-    try {
-      final Directory dir = await getApplicationDocumentsDirectory();
-      var list = await dir.list().toList();
-      var videoname = '${dir.path}/test.mp4';
-
+      var d = await getDataDir();
+      var p = await getPhotoDir();
       final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
-      _flutterFFmpeg.enableLogCallback((i, s) {
-        setState(() {
-          log.add(s);
-        });
-      });
-//      var packageList = await _flutterFFmpeg.getExternalLibraries();
-//      packageList.forEach((value) => print("External library: $value"));
-      var res = await _flutterFFmpeg.execute(
-          '-y -r 1 -i ${dir.path}/image%03d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest $videoname');
-      var info = await _flutterFFmpeg.getMediaInformation(videoname);
-      setState(() {
-        log.add(info.toString());
-      });
-    } on Exception catch (ex) {
-      setState(() {
-        log.add(ex.toString());
-      });
-//      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(ex.toString())));
-    }
+      await _flutterFFmpeg.execute(
+          '-y -r 1 -i ${p.path}/%03d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest ${d.path}/v.mp4');
+      var info = await _flutterFFmpeg.getMediaInformation('${d.path}/v.mp4');
   }
 
   void resetMovie() async {
@@ -381,94 +369,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void shareMovie() async {
-    var permissions =
-        await PermissionHandler().requestPermissions([PermissionGroup.storage]);
-    final Directory dir = await getApplicationDocumentsDirectory();
-    var temp =
-        await getExternalStorageDirectory(); //todo: this is not available in ios
-    var file = File.fromUri(Uri.file('${dir.path}/test.mp4'));
-    await file.copy('${temp.path}/test.mp4');
-    var videoname = '${temp.path}/test.mp4';
-    ShareExtend.share(videoname, "video");
+    var d = await getDataDir();
+    ShareExtend.share('${d.path}/v.mp4', "video");
   }
 
   void playMovie() async {
-    try {
-      videoPlayerController?.dispose();
-      chewieController?.dispose();
-      videoPlayerController = null;
-      chewieController = null;
-      setState(() {});
-      final Directory dir = await getApplicationDocumentsDirectory();
-      var videoname = '${dir.path}/test.mp4';
+    videoPlayerController?.dispose();
+    chewieController?.dispose();
+    videoPlayerController = null;
+    chewieController = null;
+    setState(() {});
+    var d = await getDataDir();
 
-      videoPlayerController = VideoPlayerController.file(File(videoname));
-      this.chewieController = ChewieController(
-        videoPlayerController: videoPlayerController,
-        aspectRatio: 3 / 2,
-        autoPlay: false,
-        looping: false,
-      );
-      setState(() {});
-    } on Exception catch (ex) {
-      setState(() {
-        log.add(ex.toString());
-      });
-//      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(ex.toString())));
-    }
+    videoPlayerController = VideoPlayerController.file(File('${d.path}/v.mp4'));
+    this.chewieController = ChewieController(
+      videoPlayerController: videoPlayerController,
+      aspectRatio: 3 / 2,
+    );
+    setState(() {});
   }
-
-//  void _incrementCounter() async {
-////    Map<PermissionGroup, PermissionStatus> permissions = await PermissionHandler().requestPermissions([PermissionGroup.storage]);
-//    final Directory dir = await getApplicationDocumentsDirectory();
-//    var videoname = '${dir.path}/test.mp4';
-////    var videotest = '${dir.path}/SampleVideo_360x240_1mb.mp4';
-//
-//    var image = await ImagePicker.pickImage(source: ImageSource.camera);
-////    Share.share('check out my website https://example.com');
-////
-////    HttpClient client = new HttpClient();
-////    var req = await client.getUrl(Uri.parse("https://www.sample-videos.com/video123/mp4/240/big_buck_bunny_240p_1mb.mp4"));
-////    var res = await req.done;
-////    await res.pipe(new File(videoname).openWrite());
-//
-//    var newImage = await image.copy('${dir.path}/image${i++}.jpg');
-//
-//    var files = await dir.list().toList();
-//
-//    final FlutterFFmpeg _flutterFFmpeg = new FlutterFFmpeg();
-//    var packageList = await _flutterFFmpeg.getExternalLibraries();
-//    packageList.forEach((value) => print("External library: $value"));
-////
-////    // -vframes 2  coutt of frames
-//    var res = await _flutterFFmpeg.execute(
-//        '-y -r 1 -i ${dir.path}/image%d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest $videoname');
-//    var info1 = await _flutterFFmpeg.getMediaInformation(videoname);
-////    var info2 = await _flutterFFmpeg.getMediaInformation(videotest);
-//    videoPlayerController = VideoPlayerController.file(File(videoname));
-//    this.chewieController = ChewieController(
-//      videoPlayerController: videoPlayerController,
-//      aspectRatio: 3 / 2,
-//      autoPlay: true,
-//      looping: true,
-//    );
-//////    _controller = VideoPlayerController.network('http://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_20mb.mp4');
-////    await videoPlayerController.initialize();
-////    await videoPlayerController.setLooping(true);
-//    setState(() {});
-////    await videoPlayerController.play();
-//////    setState(() {
-//////      _image = newImage;
-//////    });
-////    var d = 1;
-//  }
-
-  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(widget.title),
         actions: <Widget>[
@@ -482,8 +405,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: chewieController == null
-            ? ListView(
-                children: log.map((e) => Text(e)).toList(),
+            ? GridView.count(
+                crossAxisCount: 2,
+                children: images.map((s)=>Image.file(s, filterQuality: FilterQuality.low,)).toList(),
               )
             : Chewie(
                 controller: chewieController,
