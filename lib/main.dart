@@ -12,17 +12,16 @@ import 'package:chewie/chewie.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 
+var name = 'FaceTimelapse';
+
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Face Timelapse',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Face Timelapse'),
+      title: name,
+      home: MyHomePage(),
     );
   }
 }
@@ -30,61 +29,37 @@ class MyApp extends StatelessWidget {
 class FaceDetectorPainter extends CustomPainter {
   FaceDetectorPainter(this.imageSize, this.faces);
 
-  final Size imageSize;
-  final List<Face> faces;
-
-  Rect _scaleRect({
-    @required Rect rect,
-    @required Size imageSize,
-    @required Size widgetSize,
-  }) {
-    final double scaleX = widgetSize.width / imageSize.width;
-    final double scaleY = widgetSize.height / imageSize.height;
-    return Rect.fromLTRB(
-      (imageSize.width - rect.left) * scaleX,
-      rect.top.toDouble() * scaleY,
-      (imageSize.width - rect.right) * scaleX,
-      rect.bottom.toDouble() * scaleY,
-    );
-  }
-
-  Offset _scaleOffset({
-    @required Offset offset,
-    @required Size imageSize,
-    @required Size widgetSize,
-  }) {
-    final double scaleX = widgetSize.width / imageSize.width;
-    final double scaleY = widgetSize.height / imageSize.height;
-
-    return Offset((imageSize.width - offset.dx) * scaleX,
-        offset.dy * scaleY); //offset.scale(scaleX, scaleY);
-  }
+  Size imageSize;
+  List<Face> faces;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
+    var paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
       ..color = Colors.red;
 
-    for (Face face in faces) {
+    var sX = size.width / imageSize.width;
+    var sY = size.height / imageSize.height;
+
+    for (var face in faces) {
       for (var lm in FaceLandmarkType.values) {
         var mark = face.getLandmark(lm);
         if (mark != null)
           canvas.drawCircle(
-              _scaleOffset(
-                  offset: mark.position,
-                  imageSize: imageSize,
-                  widgetSize: size),
+              Offset((imageSize.width - mark.position.dx) * sX,
+                  mark.position.dy * sY),
               10.0,
               paint);
       }
 
+      var rect = face.boundingBox;
       canvas.drawRect(
-        _scaleRect(
-          rect: face.boundingBox,
-          imageSize: imageSize,
-          widgetSize: size,
+        Rect.fromLTRB(
+          (imageSize.width - rect.left) * sX,
+          rect.top.toDouble() * sY,
+          (imageSize.width - rect.right) * sX,
+          rect.bottom.toDouble() * sY,
         ),
         paint,
       );
@@ -107,7 +82,7 @@ class TakePhoto extends StatefulWidget {
 class _TakePhotoState extends State<TakePhoto> {
   CameraController _camera;
   bool _isDetecting = false;
-  dynamic _scanResults;
+  List<Face> _faces;
   CameraLensDirection _direction = CameraLensDirection.front;
 
   @override
@@ -125,7 +100,7 @@ class _TakePhotoState extends State<TakePhoto> {
   }
 
   Uint8List concatenatePlanes(List<Plane> planes) {
-    final WriteBuffer allBytes = WriteBuffer();
+    var allBytes = WriteBuffer();
     planes.forEach((Plane plane) => allBytes.putUint8List(plane.bytes));
     return allBytes.done().buffer.asUint8List();
   }
@@ -178,25 +153,24 @@ class _TakePhotoState extends State<TakePhoto> {
   }
 
   void _initializeCamera() async {
-    CameraDescription description = await getCamera(_direction);
-    ImageRotation rotation = rotationIntToImageRotation(
+    var description = await getCamera(_direction);
+    var rotation = rotationIntToImageRotation(
       description.sensorOrientation,
     );
     _camera = CameraController(description, ResolutionPreset.medium);
     await _camera.initialize();
     setState(() {});
 
-    final FirebaseVision mlVision = FirebaseVision.instance;
     _camera.startImageStream((CameraImage image) {
       if (_isDetecting) return;
 
       _isDetecting = true;
-      var detector = mlVision.faceDetector(FaceDetectorOptions(
+      var detector = FirebaseVision.instance.faceDetector(FaceDetectorOptions(
           enableLandmarks: true, mode: FaceDetectorMode.accurate));
       detect(image, detector.processImage, rotation).then(
         (dynamic result) {
           setState(() {
-            _scanResults = result;
+            _faces = result;
           });
 
           _isDetecting = false;
@@ -210,26 +184,15 @@ class _TakePhotoState extends State<TakePhoto> {
   }
 
   Widget _buildResults() {
-    const Text noResultsText = const Text('No results!');
+    const noResultsText = const Text('No results!');
 
-    if (_scanResults == null ||
-        _camera == null ||
-        !_camera.value.isInitialized) {
+    if (_faces == null || _camera == null || !_camera.value.isInitialized) {
       return noResultsText;
     }
-
-    CustomPainter painter;
-
-    final Size imageSize = Size(
-      _camera.value.previewSize.height,
-      _camera.value.previewSize.width,
-    );
-
-    if (_scanResults is! List<Face>) return noResultsText;
-    painter = FaceDetectorPainter(imageSize, _scanResults);
+    var imageSize = _camera.value.previewSize.flipped;
 
     return CustomPaint(
-      painter: painter,
+      painter: FaceDetectorPainter(imageSize, _faces),
     );
   }
 
@@ -244,7 +207,7 @@ class _TakePhotoState extends State<TakePhoto> {
             )
           : Stack(
               fit: StackFit.expand,
-              children: <Widget>[
+              children: [
                 CameraPreview(_camera),
                 _buildResults(),
               ],
@@ -262,6 +225,7 @@ class _TakePhotoState extends State<TakePhoto> {
     }
     var path = '${d.path}/${i.toString().padLeft(3, '0')}.jpg';
     await _camera.takePicture(path);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -277,10 +241,6 @@ class _TakePhotoState extends State<TakePhoto> {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  final String title;
-
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -289,16 +249,12 @@ Future<Directory> getDataDir() async {
   await PermissionHandler().requestPermissions([PermissionGroup.storage]);
   //todo: this is not available in ios, should research more
   var d = await getExternalStorageDirectory();
-  var ret = await Directory('${d.path}/FaceTimelapse').create();
-  var list = ret.listSync();
-  return ret;
+  return Directory('${d.path}/$name').create();
 }
 
 Future<Directory> getPhotoDir() async {
   var d = await getDataDir();
-  var ret = await Directory('${d.path}/photos').create();
-  var list = ret.listSync();
-  return ret;
+  return Directory('${d.path}/photos').create();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -318,12 +274,15 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    loadImages();
+    erase();
   }
 
-  void loadImages() async {
-//    (await getDataDir()).delete(recursive: true);
+  erase() async {
+    (await getDataDir()).delete(recursive: true);
+    await loadImages();
+  }
 
+  loadImages() async {
     var dir = await getPhotoDir();
     var list = dir.listSync().map((e) => File(e.path)).toList();
     setState(() {
@@ -331,16 +290,14 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void makeMovie() async {
+  makeMovie() async {
     var d = await getDataDir();
     var p = await getPhotoDir();
-    var ff = new FlutterFFmpeg();
-    await ff.execute(
-        '-y -r 1 -i ${p.path}/%03d.jpg -f lavfi -t 1 -i anullsrc -vcodec libx264 -shortest ${d.path}/v.mp4');
-//      var info = await ff.getMediaInformation('${d.path}/v.mp4');
+    await FlutterFFmpeg().execute(
+        '-y -r 1/5 -i ${p.path}/%03d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${d.path}/v.mp4');
   }
 
-  void resetMovie() async {
+  resetMovie() async {
     videoPlayerController?.dispose();
     chewieController?.dispose();
     videoPlayerController = null;
@@ -348,7 +305,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
-  void playMovie() async {
+  playMovie() async {
     videoPlayerController?.dispose();
     chewieController?.dispose();
     videoPlayerController = null;
@@ -368,19 +325,23 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
-        actions: <Widget>[
+        title: Text(name),
+        actions: [
           IconButton(
               icon: Icon(Icons.add_a_photo),
-              onPressed: (){
-                Navigator.of(context).push(MaterialPageRoute(builder: (b) => TakePhoto()));
+              onPressed: () async {
+                await Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (b) => TakePhoto()));
+                loadImages();
               }),
           IconButton(icon: Icon(Icons.movie_creation), onPressed: makeMovie),
           IconButton(icon: Icon(Icons.play_arrow), onPressed: playMovie),
-          IconButton(icon: Icon(Icons.share), onPressed: () async{
-            var d = await getDataDir();
-            ShareExtend.share('${d.path}/v.mp4', "video");
-          })
+          IconButton(
+              icon: Icon(Icons.share),
+              onPressed: () async {
+                var d = await getDataDir();
+                ShareExtend.share('${d.path}/v.mp4', "video");
+              })
         ],
       ),
       body: Center(
