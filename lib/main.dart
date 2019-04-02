@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_extend/share_extend.dart';
@@ -14,7 +14,12 @@ import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 
 var name = 'FaceTimelapse';
 
-void main() => runApp(MyApp());
+void main() {
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -80,23 +85,14 @@ class TakePhoto extends StatefulWidget {
 }
 
 class _TakePhotoState extends State<TakePhoto> {
-  CameraController _camera;
-  bool _isDetecting = false;
+  CameraController cam;
+  bool det = false;
   List<Face> _faces;
-  CameraLensDirection _direction = CameraLensDirection.front;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
-  }
-
-  Future<CameraDescription> getCamera(CameraLensDirection dir) async {
-    return await availableCameras().then(
-      (List<CameraDescription> cameras) => cameras.firstWhere(
-            (CameraDescription camera) => camera.lensDirection == dir,
-          ),
-    );
   }
 
   Uint8List concatenatePlanes(List<Plane> planes) {
@@ -138,46 +134,30 @@ class _TakePhotoState extends State<TakePhoto> {
     );
   }
 
-  ImageRotation rotationIntToImageRotation(int rotation) {
-    switch (rotation) {
-      case 0:
-        return ImageRotation.rotation0;
-      case 90:
-        return ImageRotation.rotation90;
-      case 180:
-        return ImageRotation.rotation180;
-      default:
-        assert(rotation == 270);
-        return ImageRotation.rotation270;
-    }
-  }
-
   void _initializeCamera() async {
-    var description = await getCamera(_direction);
-    var rotation = rotationIntToImageRotation(
-      description.sensorOrientation,
-    );
-    _camera = CameraController(description, ResolutionPreset.medium);
-    await _camera.initialize();
+    var description = (await availableCameras())
+        .firstWhere((c) => c.lensDirection == CameraLensDirection.front);
+    cam = CameraController(description, ResolutionPreset.medium);
+    await cam.initialize();
     setState(() {});
 
-    _camera.startImageStream((CameraImage image) {
-      if (_isDetecting) return;
+    cam.startImageStream((CameraImage image) {
+      if (det) return;
 
-      _isDetecting = true;
+      det = true;
       var detector = FirebaseVision.instance.faceDetector(FaceDetectorOptions(
           enableLandmarks: true, mode: FaceDetectorMode.accurate));
-      detect(image, detector.processImage, rotation).then(
+      detect(image, detector.processImage, ImageRotation.rotation270).then(
         (dynamic result) {
           setState(() {
             _faces = result;
           });
 
-          _isDetecting = false;
+          det = false;
         },
       ).catchError(
         (_) {
-          _isDetecting = false;
+          det = false;
         },
       );
     });
@@ -186,10 +166,10 @@ class _TakePhotoState extends State<TakePhoto> {
   Widget _buildResults() {
     const noResultsText = const Text('No results!');
 
-    if (_faces == null || _camera == null || !_camera.value.isInitialized) {
+    if (_faces == null || cam == null || !cam.value.isInitialized) {
       return noResultsText;
     }
-    var imageSize = _camera.value.previewSize.flipped;
+    var imageSize = cam.value.previewSize.flipped;
 
     return CustomPaint(
       painter: FaceDetectorPainter(imageSize, _faces),
@@ -199,7 +179,7 @@ class _TakePhotoState extends State<TakePhoto> {
   Widget _buildImage() {
     return Container(
       constraints: const BoxConstraints.expand(),
-      child: _camera == null
+      child: cam == null
           ? const Center(
               child: Text(
                 'Initializing Camera...',
@@ -208,7 +188,7 @@ class _TakePhotoState extends State<TakePhoto> {
           : Stack(
               fit: StackFit.expand,
               children: [
-                CameraPreview(_camera),
+                CameraPreview(cam),
                 _buildResults(),
               ],
             ),
@@ -217,14 +197,13 @@ class _TakePhotoState extends State<TakePhoto> {
 
   takePicture() async {
     var d = await getPhotoDir();
-    //todo: getting id like this is not resilient to user actions in directory
     int i = d.listSync().length;
-    if (_camera.value.isStreamingImages) await _camera.stopImageStream();
-    if (_camera.value.isTakingPicture) {
+    if (cam.value.isStreamingImages) await cam.stopImageStream();
+    if (cam.value.isTakingPicture) {
       return null;
     }
     var path = '${d.path}/${i.toString().padLeft(3, '0')}.jpg';
-    await _camera.takePicture(path);
+    await cam.takePicture(path);
     Navigator.of(context).pop();
   }
 
@@ -247,7 +226,6 @@ class MyHomePage extends StatefulWidget {
 
 Future<Directory> getDataDir() async {
   await PermissionHandler().requestPermissions([PermissionGroup.storage]);
-  //todo: this is not available in ios, should research more
   var d = await getExternalStorageDirectory();
   return Directory('${d.path}/$name').create();
 }
@@ -258,16 +236,16 @@ Future<Directory> getPhotoDir() async {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  VideoPlayerController videoPlayerController;
-  ChewieController chewieController;
+  VideoPlayerController vPC;
+  ChewieController cC;
   List<File> images = [];
 
   @override
   void dispose() {
-    videoPlayerController?.dispose();
-    chewieController?.dispose();
-    videoPlayerController = null;
-    chewieController = null;
+    vPC?.dispose();
+    cC?.dispose();
+    vPC = null;
+    cC = null;
     super.dispose();
   }
 
@@ -298,24 +276,24 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   resetMovie() async {
-    videoPlayerController?.dispose();
-    chewieController?.dispose();
-    videoPlayerController = null;
-    chewieController = null;
+    vPC?.dispose();
+    cC?.dispose();
+    vPC = null;
+    cC = null;
     setState(() {});
   }
 
   playMovie() async {
-    videoPlayerController?.dispose();
-    chewieController?.dispose();
-    videoPlayerController = null;
-    chewieController = null;
+    vPC?.dispose();
+    cC?.dispose();
+    vPC = null;
+    cC = null;
     setState(() {});
     var d = await getDataDir();
 
-    videoPlayerController = VideoPlayerController.file(File('${d.path}/v.mp4'));
-    this.chewieController = ChewieController(
-      videoPlayerController: videoPlayerController,
+    vPC = VideoPlayerController.file(File('${d.path}/v.mp4'));
+    this.cC = ChewieController(
+      videoPlayerController: vPC,
       aspectRatio: 3 / 2,
     );
     setState(() {});
@@ -345,7 +323,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: Center(
-        child: chewieController == null
+        child: cC == null
             ? GridView.count(
                 crossAxisCount: 2,
                 children: images
@@ -356,7 +334,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     .toList(),
               )
             : Chewie(
-                controller: chewieController,
+                controller: cC,
               ),
       ),
       floatingActionButton: FloatingActionButton(
