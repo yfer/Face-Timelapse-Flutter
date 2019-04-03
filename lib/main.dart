@@ -32,17 +32,18 @@ class MyApp extends StatelessWidget {
 }
 
 class FaceDetectorPainter extends CustomPainter {
-  FaceDetectorPainter(this.iS, this.fs);
+  FaceDetectorPainter(this.iS, this.fs, this.c);
 
   Size iS;
   List<Face> fs;
+  Color c;
 
   @override
   void paint(Canvas canvas, Size size) {
     var p = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0
-      ..color = Colors.red;
+      ..color = c;
 
     var sX = size.width / iS.width;
     var sY = size.height / iS.height;
@@ -85,7 +86,8 @@ class TakePhoto extends StatefulWidget {
 class _TakePhotoState extends State<TakePhoto> {
   CameraController cam;
   var det = false;
-  List<Face> _faces;
+  List<Face> _faces, _oldfaces;
+  Size _old;
 
   @override
   void initState() {
@@ -129,8 +131,28 @@ class _TakePhotoState extends State<TakePhoto> {
       ),
     );
   }
+  void loadOld() async {
+    var dd = await getPhotoDir();
+    var list = dd.listSync();
+    if(list.length == 0) return;
+    var p = list.last.path;
+    var u = list.last.uri;
+    var detector = FirebaseVision.instance.faceDetector(FaceDetectorOptions(
+        enableLandmarks: true, mode: FaceDetectorMode.accurate));
+    FirebaseVisionImage im = FirebaseVisionImage.fromFilePath(p);
+    var i = Image.file(File.fromUri(u));
+    var id = i.image.resolve(ImageConfiguration()).completer.addListener((ii,b) async{
+      var f = await detector.processImage(im);
+      setState(() {
+        _old = Size(ii.image.width.toDouble(), ii.image.height.toDouble());
+        _oldfaces = f;
+      });
+    });
 
+
+  }
   void initCam() async {
+    await loadOld();
     var d = (await availableCameras())
         .firstWhere((c) => c.lensDirection == CameraLensDirection.front);
     cam = CameraController(d, ResolutionPreset.medium);
@@ -159,16 +181,23 @@ class _TakePhotoState extends State<TakePhoto> {
     });
   }
 
-  Widget res() {
+  Widget res(List<Face> f) {
     const noResultsText = const Text('No results!');
-
-    if (_faces == null || cam == null || !cam.value.isInitialized) {
+    if (f == null || cam == null || !cam.value.isInitialized) {
       return noResultsText;
     }
-    var imageSize = cam.value.previewSize.flipped;
-
     return CustomPaint(
-      painter: FaceDetectorPainter(imageSize, _faces),
+      painter: FaceDetectorPainter(cam.value.previewSize.flipped, f, Colors.red),
+    );
+  }
+
+  Widget res2(List<Face> f) {
+    const noResultsText = const Text('No results!');
+    if (f == null || cam == null || !cam.value.isInitialized) {
+      return noResultsText;
+    }
+    return CustomPaint(
+      painter: FaceDetectorPainter(_old, f, Colors.green),
     );
   }
 
@@ -176,11 +205,10 @@ class _TakePhotoState extends State<TakePhoto> {
     var d = await getPhotoDir();
     int i = d.listSync().length;
     if (cam.value.isStreamingImages) await cam.stopImageStream();
-    if (cam.value.isTakingPicture) {
-      return null;
-    }
+    await Future.delayed(Duration(seconds: 3));
     var path = '${d.path}/${i.toString().padLeft(3, '0')}.jpg';
     await cam.takePicture(path);
+    await cam.dispose();
     Navigator.of(context).pop();
   }
 
@@ -203,7 +231,8 @@ class _TakePhotoState extends State<TakePhoto> {
                   fit: StackFit.expand,
                   children: [
                     CameraPreview(cam),
-                    res(),
+                    res(_faces),
+                    res2(_oldfaces),
                   ],
                 ),
         ));
@@ -253,6 +282,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   loadImages() async {
     var dir = await getPhotoDir();
+    if(!dir.existsSync()) return;
     var list = dir.listSync().map((e) => File(e.path)).toList();
     setState(() {
       images = list;
@@ -263,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var d = await getDataDir();
     var p = await getPhotoDir();
     await FlutterFFmpeg().execute(
-        '-y -r 1/5 -i ${p.path}/%03d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${d.path}/v.mp4');
+        '-y -r 1/3 -i ${p.path}/%03d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${d.path}/v.mp4');
   }
 
   resetMovie() async {
@@ -296,13 +326,6 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(name),
         actions: [
-          IconButton(
-              icon: Icon(Icons.add_a_photo),
-              onPressed: () async {
-                await Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (b) => TakePhoto()));
-                loadImages();
-              }),
           IconButton(icon: Icon(Icons.movie_creation), onPressed: makeMovie),
           IconButton(icon: Icon(Icons.play_arrow), onPressed: playMovie),
           IconButton(
@@ -320,7 +343,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: images
                     .map((s) => Image.file(
                           s,
-                          filterQuality: FilterQuality.low,
+                          filterQuality: FilterQuality.none,
                         ))
                     .toList(),
               )
@@ -329,8 +352,12 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: resetMovie,
-        child: Icon(Icons.add),
+        onPressed: () async {
+          await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (b) => TakePhoto()));
+          loadImages();
+        },
+        child: Icon(Icons.add_a_photo),
       ),
     );
   }
