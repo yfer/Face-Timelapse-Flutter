@@ -9,40 +9,36 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:camera/camera.dart';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 
-main() {
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+main(){
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(A());
 }
 
-class A extends StatelessWidget {
+class A extends StatelessWidget{
   @override
-  build(c) => MaterialApp(
-        home: HP(),
-      );
+  build(c)=>MaterialApp(home:HP());
 }
 
-class FDP extends CustomPainter {
-  FDP(this.S, this.F, this.C);
+class FDP extends CustomPainter{
+  FDP(this.S,this.F,this.C);
 
   var S;
   var F;
   var C;
 
   @override
-  paint(ca, sz) {
-    var p = Paint()..color = C;
+  paint(ca,sz){
+    var p=Paint()..color=C;
 
-    var x = sz.width / S.width;
-    var y = sz.height / S.height;
+    var x=sz.width/S.width;
+    var y=sz.height/S.height;
 
-    for (var f in F) {
-      for (var l in FaceLandmarkType.values) {
-        var m = f.getLandmark(l);
-        if (m != null)
+    for(var f in F){
+      for(var l in FaceLandmarkType.values){
+        var m=f.getLandmark(l);
+        if(m!=null)
           ca.drawCircle(
-              Offset((S.width - m.position.dx) * x, m.position.dy * y),
+              Offset((S.width-m.position.dx)*x,m.position.dy*y),
               10.0,
               p);
       }
@@ -50,194 +46,190 @@ class FDP extends CustomPainter {
   }
 
   @override
-  shouldRepaint(o) => o != this;
+  shouldRepaint(o)=>o!=this;
 }
 
-class TakePhoto extends StatefulWidget {
+class TakePhoto extends StatefulWidget{
   @override
-  createState() => _TakePhotoState();
+  createState()=>_TakePhotoState();
 }
 
-class _TakePhotoState extends State<TakePhoto> {
+class _TakePhotoState extends State<TakePhoto>{
   var C;
-  var D = false;
-  var F = [], O = [];
+  var D=false;
+  var F=[],O=[];
   var S;
 
   @override
-  initState() {
+  initState(){
     super.initState();
     initCam();
   }
 
-  loadOld() async {
-    var l = (await PD()).listSync();
-    if (l.length == 0) return;
-    var v = FirebaseVisionImage.fromFilePath(l.last.path);
-    var f = Image.file(File.fromUri(l.last.uri));
-    f.image.resolve(ImageConfiguration()).completer.addListener((i, b) async {
-      var d = await detect(v);
-      setState(() {
-        S = Size(i.image.width.toDouble(), i.image.height.toDouble());
-        O = d;
+  loadOld() async{
+    var l=(await PD()).listSync();
+    if(l.length==0)return;
+    var v=FirebaseVisionImage.fromFilePath(l.last.path);
+    var f=Image.file(File.fromUri(l.last.uri));
+    f.image.resolve(ImageConfiguration()).completer.addListener((i,b)async{
+      var d=await V(v);
+      setState((){
+        S=Size(i.image.width.toDouble(),i.image.height.toDouble());
+        O=d;
       });
     });
   }
 
-  var detect = FirebaseVision.instance
+  var V=FirebaseVision.instance
       .faceDetector(FaceDetectorOptions(
-          enableLandmarks: true, mode: FaceDetectorMode.accurate))
+          enableLandmarks:true,mode:FaceDetectorMode.accurate))
       .processImage;
 
-  initCam() async {
+  initCam()async{
     await loadOld();
-    var d = (await availableCameras())
-        .firstWhere((c) => c.lensDirection == CameraLensDirection.front);
-    C = CameraController(d, ResolutionPreset.medium);
+    var d=(await availableCameras())
+        .firstWhere((c)=>c.lensDirection==CameraLensDirection.front);
+    C=CameraController(d,ResolutionPreset.medium);
     await C.initialize();
-    setState(() {});
+    setState((){});
 
-    C.startImageStream((i) async {
-      if (D) return;
+    C.startImageStream((i)async{
+      if(D)return;
 
-      D = true;
-      try {
-        var b = WriteBuffer();
-        i.planes.forEach((p) => b.putUint8List(p.bytes));
+      D=true;
+      try{
+        var b=WriteBuffer();
+        i.planes.forEach((p)=>b.putUint8List(p.bytes));
 
-        var md = FirebaseVisionImageMetadata(
-          rawFormat: i.format.raw,
-          size: Size(i.width.toDouble(), i.height.toDouble()),
-          rotation: ImageRotation.rotation270,
-          planeData: i.planes
-              .map((p) => FirebaseVisionImagePlaneMetadata(
-                    bytesPerRow: p.bytesPerRow,
-                    height: p.height,
-                    width: p.width,
+        var v=FirebaseVisionImageMetadata(
+          rawFormat:i.format.raw,
+          size:Size(i.width.toDouble(),i.height.toDouble()),
+          rotation:ImageRotation.rotation270,
+          planeData:i.planes
+              .map((p)=>FirebaseVisionImagePlaneMetadata(
+                    bytesPerRow:p.bytesPerRow,
+                    height:p.height,
+                    width:p.width
                   ))
-              .toList(),
+              .toList()
         );
 
-        var f = await detect(FirebaseVisionImage.fromBytes(
+        var f=await V(FirebaseVisionImage.fromBytes(
           b.done().buffer.asUint8List(),
-          md,
+          v
         ));
-        setState(() {
-          F = f;
+        setState((){
+          F=f;
         });
-      } finally {
-        D = false;
+      }finally{
+        D=false;
       }
     });
   }
 
   @override
-  build(c) => Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          var d = await PD();
-          var i = d.listSync().length;
-          if (C.value.isStreamingImages) await C.stopImageStream();
-          await Future.delayed(Duration(seconds: 1));
-          var path = '${d.path}/${i.toString().padLeft(3, '0')}.jpg';
-          await C.takePicture(path);
+  build(c)=>Scaffold(
+      floatingActionButton:FloatingActionButton(
+        onPressed:()async{
+          var d=await PD();
+          var i=d.listSync().length;
+          if(C.value.isStreamingImages)await C.stopImageStream();
+          await Future.delayed(Duration(seconds:1));
+          var p='${d.path}/${i.toString().padLeft(3,'0')}.jpg';
+          await C.takePicture(p);
           Navigator.of(c).pop();
         },
-        child: Icon(Icons.add_a_photo),
+        child:Icon(Icons.add_a_photo)
       ),
-      body: Container(
-          constraints: BoxConstraints.expand(),
-          child: C?.value?.isInitialized
-              ? Stack(
-                  fit: StackFit.expand,
-                  children: [
+      body:Container(
+          constraints:BoxConstraints.expand(),
+          child:C?.value?.isInitialized?Stack(
+                  fit:StackFit.expand,
+                  children:[
                     CameraPreview(C),
                     CustomPaint(
-                      painter: FDP(
-                          C.value.previewSize.flipped, F, Colors.red),
+                      painter:FDP(C.value.previewSize.flipped,F,Colors.red),
                     ),
                     CustomPaint(
-                      painter: FDP(S, O, Colors.red),
-                    ),
-                  ],
-                )
-              : Center(
-                  child: Text(
+                      painter:FDP(S,O,Colors.red),
+                    )
+                  ]
+                ):Center(
+                  child:Text(
                     'Initializing Camera...',
-                  ),
+                  )
                 )));
 }
 
-class HP extends StatefulWidget {
+class HP extends StatefulWidget{
   @override
-  createState() => _HPState();
+  createState()=>_HPState();
 }
 
-DD() async {
-  await PermissionHandler().requestPermissions([PermissionGroup.storage]);
+DD()async{
+  await PermissionHandler()
+      .requestPermissions([PermissionGroup.storage,PermissionGroup.camera]);
   return Directory(
           '${(await getExternalStorageDirectory()).path}/FaceTimelapse')
       .create();
 }
 
-PD() async {
+PD()async{
   return Directory('${(await DD()).path}/photos').create();
 }
 
-class _HPState extends State<HP> {
-  var I = [];
+class _HPState extends State<HP>{
+  var I=[];
 
   @override
-  initState() {
+  initState(){
     super.initState();
-    loadImages();
+    lI();
   }
 
-  loadImages() async {
-    var i =
-        (await PD()).listSync().map((e) => File(e.path)).toList();
-    setState(() {
-      I = i;
+  lI()async{
+    var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
+    setState((){
+      I=i;
     });
   }
 
-  makeMovie() async {
-    await FlutterFFmpeg().execute(
-        '-y -r 1 -i ${(await PD()).path}/%03d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${(await DD()).path}/v.mp4');
-  }
-
   @override
-  build(c) {
+  build(c){
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(icon: Icon(Icons.movie_creation), onPressed: makeMovie),
+      appBar:AppBar(
+        actions:[
           IconButton(
-              icon: Icon(Icons.play_arrow),
-              onPressed: () async {
-                var file = '${(await DD()).path}/v.mp4';
+              icon:Icon(Icons.movie_creation),
+              onPressed:()async{
+                await FlutterFFmpeg().execute(
+                    '-y -r 1 -i ${(await PD()).path}/%03d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${(await DD()).path}/v.mp4');
               }),
           IconButton(
-              icon: Icon(Icons.share),
-              onPressed: () async {
-                ShareExtend.share(
-                    '${(await DD()).path}/v.mp4', "video");
+              icon:Icon(Icons.play_arrow),
+              onPressed:()async{
+                var f='${(await DD()).path}/v.mp4';
+              }),
+          IconButton(
+              icon:Icon(Icons.share),
+              onPressed:()async{
+                ShareExtend.share('${(await DD()).path}/v.mp4',"video");
               })
         ],
       ),
-      body: Center(
-          child: GridView.count(
-        crossAxisCount: 2,
-        children: I.map((s) => Image.file(s)).toList(),
+      body:Center(
+          child:GridView.count(
+        crossAxisCount:2,
+        children:I.map((s)=>Image.file(s)).toList()
       )),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
+      floatingActionButton:FloatingActionButton(
+        onPressed:()async{
           await Navigator.of(c)
-              .push(MaterialPageRoute(builder: (b) => TakePhoto()));
-          loadImages();
+              .push(MaterialPageRoute(builder:(b)=>TakePhoto()));
+          lI();
         },
-        child: Icon(Icons.add_a_photo),
-      ),
+        child:Icon(Icons.add_a_photo)
+      )
     );
   }
 }
