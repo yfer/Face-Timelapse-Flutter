@@ -15,7 +15,7 @@ class FDP extends CustomPainter{
       for(var l in FaceLandmarkType.values){
         var m=f.getLandmark(l);
         if(m!=null)
-          ca.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10.0,p);
+          ca.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10,p);
       }
       var q=S.height*y;
       var r=Rect.fromLTRB(0,q*0.1,S.width*x,q*0.9);
@@ -84,9 +84,10 @@ class TPS extends State<TP>{
           await Future.delayed(Duration(seconds:1));
           var p='${d.path}/${d.listSync().length.toString().padLeft(5,'0')}.jpg';
           await C.takePicture(p);
+          await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-1 $p');
           Navigator.of(c).pop();
         },
-        child:Icon(Icons.add_a_photo)
+        child:Icon(Icons.photo_camera)
       ),
       body:Container(
           constraints:BoxConstraints.expand(),
@@ -97,22 +98,19 @@ class TPS extends State<TP>{
                     CustomPaint(painter:FDP(S,O,Colors.red)),
                     CustomPaint(painter:FDP(C.value.previewSize.flipped,F,Colors.green))
                   ]
-                ):Center(child:Text('Initializing Camera...'))));
+                ):Center(child:CircularProgressIndicator())));
 }
 
 class HP extends StatefulWidget{createState()=>HPS();}
 
-DD()async{
-  await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera]);
-  return Directory('${(await getExternalStorageDirectory()).path}/FaceTimelapse').create();
-}
-
+DD()async{return Directory('${(await getExternalStorageDirectory()).path}/FaceTimelapse').create();}
 PD()async{return Directory('${(await DD()).path}/p').create();}
 
 class HPS extends State<HP>{
   var I=[];
   initState(){super.initState();iI();}
   iI()async{
+    await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone]);
     var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
     setState((){I=i;});
   }
@@ -130,7 +128,7 @@ class HPS extends State<HP>{
               onPressed:()async{ShareExtend.share('${(await DD()).path}/v.mp4',"video");})
         ],
       ),
-      body:Center(child:GridView.count(crossAxisCount:2,children:I.map((s)=>Image.file(s)).toList())),
+      body:Center(child:GridView.count(crossAxisCount:2,padding:EdgeInsets.all(10),children:I.map((s)=>Image.file(s)).toList())),
       floatingActionButton:FloatingActionButton(
         onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()),
         child:Icon(Icons.add_a_photo)
