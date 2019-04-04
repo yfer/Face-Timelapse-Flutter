@@ -5,7 +5,8 @@ class A extends StatelessWidget{build(c)=>MaterialApp(home:HP());}
 class FDP extends CustomPainter{
   FDP(this.S,this.F,this.C);var S;var F;var C;
   paint(ca,sz){
-    var p=Paint()..color=C;
+    if(S==null)return;
+    var p=Paint()..color=C..style=PaintingStyle.stroke..strokeWidth=5;
 
     var x=sz.width/S.width;
     var y=sz.height/S.height;
@@ -16,17 +17,21 @@ class FDP extends CustomPainter{
         if(m!=null)
           ca.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10.0,p);
       }
+      var q=S.height*y;
+      var r=Rect.fromLTRB(0,q*0.1,S.width*x,q*0.9);
+      ca.drawArc(r,1.57,f.headEulerAngleY/57.29,false,p);
+      ca.drawArc(r,4.71,f.headEulerAngleZ/57.29,false,p);
     }
   }
   shouldRepaint(o)=>o!=this;
 }
 
-class TakePhoto extends StatefulWidget{createState()=>_TakePhotoState();}
+class TP extends StatefulWidget{createState()=>TPS();}
 
-class _TakePhotoState extends State<TakePhoto>{
+class TPS extends State<TP>{
   var C;var D=false;var F=[],O=[];var S;
-  initState(){super.initState();initCam();}
-  loadOld() async{
+  initState(){super.initState();iC();}
+  iO() async{
     var l=(await PD()).listSync();
     if(l.length==0)return;
     var v=FirebaseVisionImage.fromFilePath(l.last.path);
@@ -42,13 +47,13 @@ class _TakePhotoState extends State<TakePhoto>{
 
   var V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:true,mode:FaceDetectorMode.accurate)).processImage;
 
-  initCam()async{
-    await loadOld();
+  iC()async{
+    await iO();
     var d=(await availableCameras()).firstWhere((c)=>c.lensDirection==CameraLensDirection.front);
     C=CameraController(d,ResolutionPreset.medium);
     await C.initialize();
     setState((){});
-    C.startImageStream((i)async{
+    C.startImageStream((CameraImage i)async{
       if(D)return;
       D=true;
       try{
@@ -66,9 +71,8 @@ class _TakePhotoState extends State<TakePhoto>{
                   ))
               .toList()
         );
-
         var f=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
-        setState((){F=f;});
+        if(mounted)setState((){F=f;});
       }finally{D=false;}
     });
   }
@@ -90,8 +94,8 @@ class _TakePhotoState extends State<TakePhoto>{
                   fit:StackFit.expand,
                   children:[
                     CameraPreview(C),
-                    CustomPaint(painter:FDP(C.value.previewSize.flipped,F,Colors.red)),
-                    CustomPaint(painter:FDP(S,O,Colors.red))
+                    CustomPaint(painter:FDP(S,O,Colors.red)),
+                    CustomPaint(painter:FDP(C.value.previewSize.flipped,F,Colors.green))
                   ]
                 ):Center(child:Text('Initializing Camera...'))));
 }
@@ -107,8 +111,8 @@ PD()async{return Directory('${(await DD()).path}/p').create();}
 
 class HPS extends State<HP>{
   var I=[];
-  initState(){super.initState();lI();}
-  lI()async{
+  initState(){super.initState();iI();}
+  iI()async{
     var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
     setState((){I=i;});
   }
@@ -128,7 +132,7 @@ class HPS extends State<HP>{
       ),
       body:Center(child:GridView.count(crossAxisCount:2,children:I.map((s)=>Image.file(s)).toList())),
       floatingActionButton:FloatingActionButton(
-        onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TakePhoto())).then((_)=>lI()),
+        onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()),
         child:Icon(Icons.add_a_photo)
       )
     );
