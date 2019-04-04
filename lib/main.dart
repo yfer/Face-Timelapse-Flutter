@@ -27,7 +27,7 @@ class FDP extends CustomPainter{
 }
 
 class TP extends StatefulWidget{createState()=>TPS();}
-
+var N=0;
 class TPS extends State<TP>{
   var C;var D=false;var F=[],O=[];var S;
   initState(){super.initState();iC();}
@@ -49,10 +49,10 @@ class TPS extends State<TP>{
 
   iC()async{
     await iO();
-    var d=(await availableCameras()).firstWhere((c)=>c.lensDirection==CameraLensDirection.front);
-    C=CameraController(d,ResolutionPreset.medium);
+    var a=await availableCameras();
+    if(N==a.length)N=0;
+    C=CameraController(a[N++],ResolutionPreset.medium);
     await C.initialize();
-    setState((){});
     C.startImageStream((CameraImage i)async{
       if(D)return;
       D=true;
@@ -87,8 +87,9 @@ class TPS extends State<TP>{
           await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-1 $p');
           Navigator.of(c).pop();
         },
-        child:Icon(Icons.photo_camera)
+        child:Icon(Icons.camera)
       ),
+      appBar:AppBar(actions:[IconButton(icon:Icon(Icons.switch_camera),onPressed:()async{await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
       body:Container(
           constraints:BoxConstraints.expand(),
           child:C?.value?.isInitialized??false?Stack(
