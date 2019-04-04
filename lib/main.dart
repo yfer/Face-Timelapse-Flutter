@@ -1,9 +1,9 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';
-
+var F=false;
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP());}
 class FDP extends CustomPainter{
-  FDP(this.S,this.F,this.C);var S;var F;var C;
+  FDP(this.S,this.O,this.C);var S;var O;var C;
   paint(ca,sz){
     if(S==null)return;
     var p=Paint()..color=C..style=PaintingStyle.stroke..strokeWidth=5;
@@ -11,16 +11,16 @@ class FDP extends CustomPainter{
     var x=sz.width/S.width;
     var y=sz.height/S.height;
 
-    for(var f in F){
+    for(var o in O){
       for(var l in FaceLandmarkType.values){
-        var m=f.getLandmark(l);
+        var m=o.getLandmark(l);
         if(m!=null)
           ca.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10,p);
       }
       var q=S.height*y;
       var r=Rect.fromLTRB(0,q*0.1,S.width*x,q*0.9);
-      ca.drawArc(r,1.57,f.headEulerAngleY/57.29,false,p);
-      ca.drawArc(r,4.71,f.headEulerAngleZ/57.29,false,p);
+      ca.drawArc(r,1.57,o.headEulerAngleY/57.29,F,p);
+      ca.drawArc(r,4.71,o.headEulerAngleZ/57.29,F,p);
     }
   }
   shouldRepaint(o)=>o!=this;
@@ -29,18 +29,18 @@ class FDP extends CustomPainter{
 class TP extends StatefulWidget{createState()=>TPS();}
 var N=0;
 class TPS extends State<TP>{
-  var C;var D=false;var F=[],O=[];var S;
+  var C;var D=F;var Q=[],O=[];var S;
   initState(){super.initState();iC();}
-  iO() async{
+  iO()async{
     var l=(await PD()).listSync();
     if(l.length==0)return;
     var v=FirebaseVisionImage.fromFilePath(l.last.path);
     var f=Image.file(File.fromUri(l.last.uri));
     f.image.resolve(ImageConfiguration()).completer.addListener((i,b)async{
-      var d=await V(v);
+      var o=await V(v);
       setState((){
         S=Size(i.image.width.toDouble(),i.image.height.toDouble());
-        O=d;
+        O=o;
       });
     });
   }
@@ -71,9 +71,9 @@ class TPS extends State<TP>{
                   ))
               .toList()
         );
-        var f=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
-        if(mounted)setState((){F=f;});
-      }finally{D=false;}
+        var q=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
+        if(mounted)setState((){Q=q;});
+      }finally{D=F;}
     });
   }
   build(c)=>Scaffold(
@@ -92,12 +92,12 @@ class TPS extends State<TP>{
       appBar:AppBar(actions:[IconButton(icon:Icon(Icons.switch_camera),onPressed:()async{await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
       body:Container(
           constraints:BoxConstraints.expand(),
-          child:C?.value?.isInitialized??false?Stack(
+          child:C?.value?.isInitialized??F?Stack(
                   fit:StackFit.expand,
                   children:[
                     CameraPreview(C),
                     CustomPaint(painter:FDP(S,O,Colors.red)),
-                    CustomPaint(painter:FDP(C.value.previewSize.flipped,F,Colors.green))
+                    CustomPaint(painter:FDP(C.value.previewSize.flipped,Q,Colors.green))
                   ]
                 ):Center(child:CircularProgressIndicator())));
 }
