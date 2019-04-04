@@ -1,32 +1,9 @@
-import 'dart:io';
-import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:share_extend/share_extend.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:camera/camera.dart';
-import 'package:firebase_ml_vision/firebase_ml_vision.dart';
+import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';
 
-main(){
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(A());
-}
-
-class A extends StatelessWidget{
-  @override
-  build(c)=>MaterialApp(home:HP());
-}
-
+main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
+class A extends StatelessWidget{build(c)=>MaterialApp(home:HP());}
 class FDP extends CustomPainter{
-  FDP(this.S,this.F,this.C);
-
-  var S;
-  var F;
-  var C;
-
-  @override
+  FDP(this.S,this.F,this.C);var S;var F;var C;
   paint(ca,sz){
     var p=Paint()..color=C;
 
@@ -37,35 +14,18 @@ class FDP extends CustomPainter{
       for(var l in FaceLandmarkType.values){
         var m=f.getLandmark(l);
         if(m!=null)
-          ca.drawCircle(
-              Offset((S.width-m.position.dx)*x,m.position.dy*y),
-              10.0,
-              p);
+          ca.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10.0,p);
       }
     }
   }
-
-  @override
   shouldRepaint(o)=>o!=this;
 }
 
-class TakePhoto extends StatefulWidget{
-  @override
-  createState()=>_TakePhotoState();
-}
+class TakePhoto extends StatefulWidget{createState()=>_TakePhotoState();}
 
 class _TakePhotoState extends State<TakePhoto>{
-  var C;
-  var D=false;
-  var F=[],O=[];
-  var S;
-
-  @override
-  initState(){
-    super.initState();
-    initCam();
-  }
-
+  var C;var D=false;var F=[],O=[];var S;
+  initState(){super.initState();initCam();}
   loadOld() async{
     var l=(await PD()).listSync();
     if(l.length==0)return;
@@ -80,27 +40,20 @@ class _TakePhotoState extends State<TakePhoto>{
     });
   }
 
-  var V=FirebaseVision.instance
-      .faceDetector(FaceDetectorOptions(
-          enableLandmarks:true,mode:FaceDetectorMode.accurate))
-      .processImage;
+  var V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:true,mode:FaceDetectorMode.accurate)).processImage;
 
   initCam()async{
     await loadOld();
-    var d=(await availableCameras())
-        .firstWhere((c)=>c.lensDirection==CameraLensDirection.front);
+    var d=(await availableCameras()).firstWhere((c)=>c.lensDirection==CameraLensDirection.front);
     C=CameraController(d,ResolutionPreset.medium);
     await C.initialize();
     setState((){});
-
     C.startImageStream((i)async{
       if(D)return;
-
       D=true;
       try{
         var b=WriteBuffer();
         i.planes.forEach((p)=>b.putUint8List(p.bytes));
-
         var v=FirebaseVisionImageMetadata(
           rawFormat:i.format.raw,
           size:Size(i.width.toDouble(),i.height.toDouble()),
@@ -114,28 +67,18 @@ class _TakePhotoState extends State<TakePhoto>{
               .toList()
         );
 
-        var f=await V(FirebaseVisionImage.fromBytes(
-          b.done().buffer.asUint8List(),
-          v
-        ));
-        setState((){
-          F=f;
-        });
-      }finally{
-        D=false;
-      }
+        var f=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
+        setState((){F=f;});
+      }finally{D=false;}
     });
   }
-
-  @override
   build(c)=>Scaffold(
       floatingActionButton:FloatingActionButton(
         onPressed:()async{
           var d=await PD();
-          var i=d.listSync().length;
           if(C.value.isStreamingImages)await C.stopImageStream();
           await Future.delayed(Duration(seconds:1));
-          var p='${d.path}/${i.toString().padLeft(3,'0')}.jpg';
+          var p='${d.path}/${d.listSync().length.toString().padLeft(5,'0')}.jpg';
           await C.takePicture(p);
           Navigator.of(c).pop();
         },
@@ -143,91 +86,49 @@ class _TakePhotoState extends State<TakePhoto>{
       ),
       body:Container(
           constraints:BoxConstraints.expand(),
-          child:C?.value?.isInitialized?Stack(
+          child:C?.value?.isInitialized??false?Stack(
                   fit:StackFit.expand,
                   children:[
                     CameraPreview(C),
-                    CustomPaint(
-                      painter:FDP(C.value.previewSize.flipped,F,Colors.red),
-                    ),
-                    CustomPaint(
-                      painter:FDP(S,O,Colors.red),
-                    )
+                    CustomPaint(painter:FDP(C.value.previewSize.flipped,F,Colors.red)),
+                    CustomPaint(painter:FDP(S,O,Colors.red))
                   ]
-                ):Center(
-                  child:Text(
-                    'Initializing Camera...',
-                  )
-                )));
+                ):Center(child:Text('Initializing Camera...'))));
 }
 
-class HP extends StatefulWidget{
-  @override
-  createState()=>_HPState();
-}
+class HP extends StatefulWidget{createState()=>HPS();}
 
 DD()async{
-  await PermissionHandler()
-      .requestPermissions([PermissionGroup.storage,PermissionGroup.camera]);
-  return Directory(
-          '${(await getExternalStorageDirectory()).path}/FaceTimelapse')
-      .create();
+  await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera]);
+  return Directory('${(await getExternalStorageDirectory()).path}/FaceTimelapse').create();
 }
 
-PD()async{
-  return Directory('${(await DD()).path}/photos').create();
-}
+PD()async{return Directory('${(await DD()).path}/p').create();}
 
-class _HPState extends State<HP>{
+class HPS extends State<HP>{
   var I=[];
-
-  @override
-  initState(){
-    super.initState();
-    lI();
-  }
-
+  initState(){super.initState();lI();}
   lI()async{
     var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
-    setState((){
-      I=i;
-    });
+    setState((){I=i;});
   }
-
-  @override
   build(c){
     return Scaffold(
       appBar:AppBar(
         actions:[
-          IconButton(
-              icon:Icon(Icons.movie_creation),
+          IconButton(icon:Icon(Icons.movie_creation),
               onPressed:()async{
-                await FlutterFFmpeg().execute(
-                    '-y -r 1 -i ${(await PD()).path}/%03d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${(await DD()).path}/v.mp4');
+                await FlutterFFmpeg().execute('-y -r 1 -i ${(await PD()).path}/%05d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${(await DD()).path}/v.mp4');
               }),
-          IconButton(
-              icon:Icon(Icons.play_arrow),
-              onPressed:()async{
-                var f='${(await DD()).path}/v.mp4';
-              }),
-          IconButton(
-              icon:Icon(Icons.share),
-              onPressed:()async{
-                ShareExtend.share('${(await DD()).path}/v.mp4',"video");
-              })
+          IconButton(icon:Icon(Icons.play_arrow),
+              onPressed:()async{var f='${(await DD()).path}/v.mp4';}),
+          IconButton(icon:Icon(Icons.share),
+              onPressed:()async{ShareExtend.share('${(await DD()).path}/v.mp4',"video");})
         ],
       ),
-      body:Center(
-          child:GridView.count(
-        crossAxisCount:2,
-        children:I.map((s)=>Image.file(s)).toList()
-      )),
+      body:Center(child:GridView.count(crossAxisCount:2,children:I.map((s)=>Image.file(s)).toList())),
       floatingActionButton:FloatingActionButton(
-        onPressed:()async{
-          await Navigator.of(c)
-              .push(MaterialPageRoute(builder:(b)=>TakePhoto()));
-          lI();
-        },
+        onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TakePhoto())).then((_)=>lI()),
         child:Icon(Icons.add_a_photo)
       )
     );
