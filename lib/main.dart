@@ -27,15 +27,14 @@ class FDP extends CustomPainter{
 }
 
 class TP extends StatefulWidget{createState()=>TPS();}
-var N=0;
+var N=0;var L;var Fc;
 class TPS extends State<TP>{
   var C;var D=F;var Q=[],O=[];var S;
   initState(){super.initState();iC();}
   iO()async{
-    var l=(await PD()).listSync();
-    if(l.length==0)return;
-    var v=FirebaseVisionImage.fromFilePath(l.last.path);
-    var f=Image.file(File.fromUri(l.last.uri));
+    if(L==null)return;
+    var v=FirebaseVisionImage.fromFilePath(L.path);
+    var f=Image.file(File.fromUri(L.uri));
     f.image.resolve(ImageConfiguration()).completer.addListener((i,b)async{
       var o=await V(v);
       setState((){
@@ -82,7 +81,7 @@ class TPS extends State<TP>{
           var d=await PD();
           if(C.value.isStreamingImages)await C.stopImageStream();
           await Future.delayed(Duration(seconds:1));
-          var p='${d.path}/${d.listSync().length.toString().padLeft(5,'0')}.jpg';
+          var p='${d.path}/${Fc.toString().padLeft(5,'0')}.jpg';
           await C.takePicture(p);
           await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
           Navigator.of(c).pop();
@@ -128,6 +127,8 @@ class HPS extends State<HP>{
   iI()async{
     await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone]);
     var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
+    Fc=i.length;
+    if(Fc>0)L=i.last;
     setState((){I=i;});
   }
   build(c){
