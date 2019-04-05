@@ -1,7 +1,7 @@
-import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';
+import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
 var F=false;var X='FaceTimelapse';
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
-class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X);}
+class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FDP extends CustomPainter{
   FDP(this.S,this.O,this.C);var S;var O;var C;
   paint(c,s){
@@ -135,9 +135,10 @@ class HPS extends State<HP>{
       appBar:AppBar(
         title:Text(X),
         actions:[
-          IconButton(icon:Icon(Icons.movie_creation),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>VP())))],
+          IconButton(icon:Icon(Icons.movie_creation),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>VP())))
+        ]
       ),
-      body:Center(child:GridView.count(crossAxisCount:2,padding:EdgeInsets.all(10),children:I.map((s)=>Image.file(s)).toList())),
+      body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover),
       floatingActionButton:FloatingActionButton(
         onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()),
         child:Icon(Icons.add_a_photo)
