@@ -1,17 +1,14 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
-var F=false;var T=true;var X='FaceTimelapse';var Dd;var Pd;
+var F=false,T=true,X='FaceTimelapse',Dd,Pd,Z=0,L,Fc;
 B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
 CPI()=>Center(child:CircularProgressIndicator());
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FDP extends CustomPainter{
-  FDP(this.S,this.O,this.C);var S;var O;var C;
+  FDP(this.S,this.O,this.C);var S,O,C;
   paint(c,s){
     if(S==null)return;
-    var p=Paint()..color=C..style=PaintingStyle.stroke..strokeWidth=5;
-
-    var x=s.width/S.width;
-    var y=s.height/S.height;
+    var p=Paint()..color=C..style=PaintingStyle.stroke..strokeWidth=5,x=s.width/S.width,y=s.height/S.height;
 
     for(var o in O){
       for(var l in FaceLandmarkType.values){
@@ -19,8 +16,7 @@ class FDP extends CustomPainter{
         if(m!=null)
           c.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10,p);
       }
-      var q=S.height*y;
-      var r=Rect.fromLTRB(0,q*0.1,S.width*x,q*0.9);
+      var q=S.height*y,r=Rect.fromLTRB(0,q*0.1,S.width*x,q*0.9);
       c.drawArc(r,1.57,o.headEulerAngleY/57.29,F,p);
       c.drawArc(r,4.71,o.headEulerAngleZ/57.29,F,p);
     }
@@ -29,19 +25,16 @@ class FDP extends CustomPainter{
 }
 
 class TP extends StatefulWidget{createState()=>TPS();}
-var Z=0;var L;var Fc;
 class TPS extends State<TP>{
-  var C;var D=F;var Q=[],O=[];var S;
+  var C,d=F,q=[],o=[],s;
   initState(){super.initState();iC();}
   iO()async{
     if(L==null)return;
-    var v=FirebaseVisionImage.fromFilePath(L.path);
-    var f=Image.file(File.fromUri(L.uri));
+    var v=FirebaseVisionImage.fromFilePath(L.path),f=Image.file(File.fromUri(L.uri));
     f.image.resolve(ImageConfiguration()).completer.addListener((i,b)async{
-      var o=await V(v);
+      o=await V(v);
       setState((){
-        S=Size(i.image.width.toDouble(),i.image.height.toDouble());
-        O=o;
+        s=Size(i.image.width.toDouble(),i.image.height.toDouble());
       });
     });
   }
@@ -55,8 +48,8 @@ class TPS extends State<TP>{
     C=CameraController(a[Z],ResolutionPreset.medium);
     await C.initialize();
     C.startImageStream((CameraImage i)async{
-      if(D)return;
-      D=T;
+      if(d)return;
+      d=T;
       try{
         var b=WriteBuffer();
         i.planes.forEach((p)=>b.putUint8List(p.bytes));
@@ -72,9 +65,9 @@ class TPS extends State<TP>{
                   ))
               .toList()
         );
-        var q=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
-        if(mounted)setState((){Q=q;});
-      }finally{D=F;}
+        q=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
+        if(mounted)setState((){});
+      }finally{d=F;}
     });
   }
   build(c)=>Scaffold(
@@ -96,8 +89,8 @@ class TPS extends State<TP>{
                   fit:StackFit.expand,
                   children:[
                     CameraPreview(C),
-                    CustomPaint(painter:FDP(S,O,Colors.red)),
-                    CustomPaint(painter:FDP(C.value.previewSize.flipped,Q,Colors.green))
+                    CustomPaint(painter:FDP(s,o,Colors.red)),
+                    CustomPaint(painter:FDP(C.value.previewSize.flipped,q,Colors.green))
                   ]
                 ):CPI()));
 }
@@ -105,7 +98,7 @@ class TPS extends State<TP>{
 class HP extends StatefulWidget{createState()=>HPS();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
-  var i=T;var m='$Dd/v.mp4';var v;var w;
+  var i=T,m='$Dd/v.mp4',v,w;
   initState(){super.initState();K();}
   dispose(){v?.dispose();w?.dispose();super.dispose();}
   K()async{
