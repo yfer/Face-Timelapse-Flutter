@@ -105,9 +105,9 @@ class HP extends StatefulWidget{createState()=>HPS();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
   var I=T;var v;var vpc;var cc;
-  initState(){super.initState();compile();}
+  initState(){super.initState();K();}
   dispose(){vpc?.dispose();cc?.dispose();super.dispose();}
-  compile()async{
+  K()async{
     v='$Dd/v.mp4';
     var f=FlutterFFmpeg();
     await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $v');
@@ -141,6 +141,6 @@ class HPS extends State<HP>{
           IconButton(icon:Icon(Icons.add_a_photo),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()))
         ]
       ),
-      body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white),
+      body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white)
     );
 }
