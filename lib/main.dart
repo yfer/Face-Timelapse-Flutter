@@ -104,7 +104,7 @@ class TPS extends State<TP>{
 
 class HP extends StatefulWidget{createState()=>HPS();}
 
-Future<Directory> DD()async{return Directory('${(await getExternalStorageDirectory()).path}/$X').create();}
+DD()async{return Directory('${(await getExternalStorageDirectory()).path}/$X').create();}
 PD()async{return Directory('${(await DD()).path}/p').create();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
