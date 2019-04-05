@@ -4,8 +4,8 @@ B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
 CPI()=>Center(child:CircularProgressIndicator());
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
-class FDP extends CustomPainter{
-  FDP(this.d,this.f,this.c);var d,f,c;
+class FP extends CustomPainter{
+  FP(this.d,this.f,this.c);var d,f,c;
   paint(k,z){
     if(d==null)return;
     var p=Paint()..color=c..style=PaintingStyle.stroke..strokeWidth=5,x=z.width/d.width,y=z.height/d.height;
@@ -89,8 +89,8 @@ class TPS extends State<TP>{
                   fit:StackFit.expand,
                   children:[
                     CameraPreview(c),
-                    CustomPaint(painter:FDP(s,o,Colors.red)),
-                    CustomPaint(painter:FDP(c.value.previewSize.flipped,q,Colors.green))
+                    CustomPaint(painter:FP(s,o,Colors.red)),
+                    CustomPaint(painter:FP(c.value.previewSize.flipped,q,Colors.green))
                   ]
                 ):CPI()));
 }
@@ -104,10 +104,10 @@ class VPS extends State<VP>{
   K()async{
     var f=FlutterFFmpeg();
     await f.execute('-y -r 1 -i $P/%05d.jpg -c:v libx264 $m');
-    var g=await f.getMediaInformation(m),s=g['streams'][0];
-    setState((){i=F;});
+    var s=(await f.getMediaInformation(m))['streams'][0];
     v=VideoPlayerController.file(File(m));
     w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
+    setState((){i=F;});
   }
   build(k)=>Scaffold(body:i?CPI():Center(child:Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
 }
