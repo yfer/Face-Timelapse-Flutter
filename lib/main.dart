@@ -113,10 +113,9 @@ class VPS extends State<VP>{
     await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $v');
     var i=await f.getMediaInformation(v);
     var s=i['streams'][0];
-    var a=s['width']/s['height'];
     setState((){I=F;});
     vpc=VideoPlayerController.file(File(v));
-    cc=ChewieController(videoPlayerController:vpc,autoPlay:T,looping:T,aspectRatio:a);
+    cc=ChewieController(videoPlayerController:vpc,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
   }
   build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(child:Chewie(controller:cc)),appBar:AppBar(actions:I?[]:[IconButton(icon:Icon(Icons.share),onPressed:(){ShareExtend.share(v,"video");})]));
 }
