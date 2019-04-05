@@ -1,5 +1,5 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
-var F=false;var X='FaceTimelapse';
+var F=false;var X='FaceTimelapse';var Dd;var Pd;
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FDP extends CustomPainter{
@@ -78,10 +78,9 @@ class TPS extends State<TP>{
   build(c)=>Scaffold(
       floatingActionButton:FloatingActionButton(
         onPressed:()async{
-          var d=await PD();
           if(C.value.isStreamingImages)await C.stopImageStream();
           await Future.delayed(Duration(seconds:1));
-          var p='${d.path}/${Fc.toString().padLeft(5,'0')}.jpg';
+          var p='$Pd/${Fc.toString().padLeft(5,'0')}.jpg';
           await C.takePicture(p);
           await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
           Navigator.of(c).pop();
@@ -103,16 +102,14 @@ class TPS extends State<TP>{
 
 class HP extends StatefulWidget{createState()=>HPS();}
 
-DD()async{return Directory('${(await getExternalStorageDirectory()).path}/$X').create();}
-PD()async{return Directory('${(await DD()).path}/p').create();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
   var I=true;var v;var vpc;var cc;
   initState(){super.initState();compile();}
   dispose(){vpc?.dispose();cc?.dispose();super.dispose();}
   compile()async{
-    v='${(await DD()).path}/v.mp4';
-    await FlutterFFmpeg().execute('-y -r 1 -i ${(await PD()).path}/%05d.jpg -c:v libx264 -pix_fmt yuv420p $v');
+    v='$Dd/v.mp4';
+    await FlutterFFmpeg().execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 -pix_fmt yuv420p $v');
     setState((){I=F;});
     vpc=VideoPlayerController.file(File(v));
     cc=ChewieController(videoPlayerController:vpc,autoPlay:true,looping:true);
@@ -126,7 +123,10 @@ class HPS extends State<HP>{
   initState(){super.initState();iI();}
   iI()async{
     await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone]);
-    var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
+    Dd=(await Directory('${(await getExternalStorageDirectory()).path}/$X').create()).path;
+    var d=await Directory('$Dd/p').create();
+    var i=d.listSync().map((e)=>File(e.path)).toList();
+    Pd=d.path;
     Fc=i.length;
     if(Fc>0)L=i.last;
     setState((){I=i;});
