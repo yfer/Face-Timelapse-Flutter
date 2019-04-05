@@ -80,7 +80,7 @@ class TPS extends State<TP>{
   build(c)=>Scaffold(
       floatingActionButton:FloatingActionButton(
         onPressed:()async{
-          if(C.value.isStreamingImages)await C.stopImageStream();
+          await C.stopImageStream();
           await Future.delayed(Duration(seconds:1));
           var p='$Pd/${Fc.toString().padLeft(5,'0')}.jpg';
           await C.takePicture(p);
@@ -89,7 +89,7 @@ class TPS extends State<TP>{
         },backgroundColor:Colors.white,
         child:Icon(Icons.camera)
       ),
-      appBar:AppBar(actions:[B(Icons.switch_camera,()async{Z++;await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
+      appBar:AppBar(actions:[B(Icons.switch_camera,()async{Z++;await C.dispose();setState((){C=null;});iC();})]),
       body:Container(
           constraints:BoxConstraints.expand(),
           child:C?.value?.isInitialized??F?Stack(
@@ -105,33 +105,37 @@ class TPS extends State<TP>{
 class HP extends StatefulWidget{createState()=>HPS();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
-  var I=T;var v='$Dd/v.mp4';var vc;var cc;
+  var i=T;var m='$Dd/v.mp4';var v;var w;
   initState(){super.initState();K();}
-  dispose(){vc?.dispose();cc?.dispose();super.dispose();}
+  dispose(){v?.dispose();w?.dispose();super.dispose();}
   K()async{
     var f=FlutterFFmpeg();
-    await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $v');
-    var i=await f.getMediaInformation(v);
-    var s=i['streams'][0];
-    setState((){I=F;});
-    vc=VideoPlayerController.file(File(v));
-    cc=ChewieController(videoPlayerController:vc,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
+    await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $m');
+    var g=await f.getMediaInformation(m);
+    var s=g['streams'][0];
+    setState((){i=F;});
+    v=VideoPlayerController.file(File(m));
+    w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
   }
-  build(c)=>Scaffold(body:I?CPI():Center(child:Chewie(controller:cc)),appBar:AppBar(actions:I?[]:[B(Icons.share,(){ShareExtend.share(v,"video");})]));
+  build(c)=>Scaffold(body:i?CPI():Center(child:Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
 }
 
 class HPS extends State<HP>{
-  var I=[];
+  var i=[];
   initState(){super.initState();iI();}
   iI()async{
-    await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone]);
+    if((await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone])).values.where((p)=>p==PermissionStatus.granted).length!=3){
+      await showDialog(context:context, builder:(b)=>AlertDialog(title:Text('App should have requested permissions')));
+      await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+      return;
+    }
     Dd=(await Directory('${(await getExternalStorageDirectory()).path}/$X').create()).path;
     var d=await Directory('$Dd/p').create();
-    var i=d.listSync().map((e)=>File(e.path)).toList();
+    i=d.listSync().map((e)=>File(e.path)).toList();
     Pd=d.path;
     Fc=i.length;
     if(Fc>0)L=i.last;
-    setState((){I=i;});
+    setState((){});
   }
   M(c,w)=>Navigator.of(c).push(MaterialPageRoute(builder:(_)=>w));
   build(c)=>Scaffold(
@@ -142,6 +146,6 @@ class HPS extends State<HP>{
           B(Icons.add_a_photo,()=>M(c,TP()).then((_)=>iI())),
         ]
       ),
-      body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white)
+      body:ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white)
     );
 }
