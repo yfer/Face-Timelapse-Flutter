@@ -84,7 +84,7 @@ class TPS extends State<TP>{
           await C.takePicture(p);
           await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
           Navigator.of(c).pop();
-        },
+        },backgroundColor:Colors.white,
         child:Icon(Icons.camera)
       ),
       appBar:AppBar(actions:[IconButton(icon:Icon(Icons.switch_camera),onPressed:()async{N++;await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
@@ -138,14 +138,11 @@ class HPS extends State<HP>{
       appBar:AppBar(
         title:Text(X),
         actions:[
-          IconButton(icon:Icon(Icons.movie_creation),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>VP())))
+          IconButton(icon:Icon(Icons.movie_creation),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>VP()))),
+          IconButton(icon:Icon(Icons.add_a_photo),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()))
         ]
       ),
-      body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover),
-      floatingActionButton:FloatingActionButton(
-        onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()),
-        child:Icon(Icons.add_a_photo)
-      )
+      body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white),
     );
   }
 }
