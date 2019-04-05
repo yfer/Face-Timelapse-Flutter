@@ -1,5 +1,5 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
-var F=false;var X='FaceTimelapse';var Dd;var Pd;
+var F=false;var T=true;var X='FaceTimelapse';var Dd;var Pd;
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FDP extends CustomPainter{
@@ -44,7 +44,7 @@ class TPS extends State<TP>{
     });
   }
 
-  var V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:true,mode:FaceDetectorMode.accurate)).processImage;
+  var V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:T,mode:FaceDetectorMode.accurate)).processImage;
 
   iC()async{
     await iO();
@@ -54,7 +54,7 @@ class TPS extends State<TP>{
     await C.initialize();
     C.startImageStream((CameraImage i)async{
       if(D)return;
-      D=true;
+      D=T;
       try{
         var b=WriteBuffer();
         i.planes.forEach((p)=>b.putUint8List(p.bytes));
@@ -104,7 +104,7 @@ class HP extends StatefulWidget{createState()=>HPS();}
 
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
-  var I=true;var v;var vpc;var cc;
+  var I=T;var v;var vpc;var cc;
   initState(){super.initState();compile();}
   dispose(){vpc?.dispose();cc?.dispose();super.dispose();}
   compile()async{
@@ -113,10 +113,10 @@ class VPS extends State<VP>{
     await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $v');
     var i=await f.getMediaInformation(v);
     var s=i['streams'][0];
-    var ar=s['width']/s['height'];
+    var a=s['width']/s['height'];
     setState((){I=F;});
     vpc=VideoPlayerController.file(File(v));
-    cc=ChewieController(videoPlayerController:vpc,autoPlay:true,looping:true,aspectRatio:ar);
+    cc=ChewieController(videoPlayerController:vpc,autoPlay:T,looping:T,aspectRatio:a);
   }
   build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(child:Chewie(controller:cc)),appBar:AppBar(actions:I?[]:[IconButton(icon:Icon(Icons.share),onPressed:(){ShareExtend.share(v,"video");})]));
 }
@@ -133,8 +133,8 @@ class HPS extends State<HP>{
     if(Fc>0)L=i.last;
     setState((){I=i;});
   }
-  build(c){
-    return Scaffold(
+
+  build(c)=>Scaffold(
       appBar:AppBar(
         title:Text(X),
         actions:[
@@ -144,5 +144,4 @@ class HPS extends State<HP>{
       ),
       body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white),
     );
-  }
 }
