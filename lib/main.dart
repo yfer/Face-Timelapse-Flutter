@@ -1,7 +1,6 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
-var F=false,T=true,X='FaceTimelapse',D,P,Z=0,L,Fc;
+var F=false,T=true,X='FaceTimelapse',D,P,Z=0,L,H;
 B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
-CPI()=>Center(child:CircularProgressIndicator());
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FP extends CustomPainter{
@@ -74,7 +73,7 @@ class TPS extends State<TP>{
       floatingActionButton:FloatingActionButton(
         onPressed:()async{
           await c.stopImageStream();
-          var p='$P/${Fc.toString().padLeft(5,'0')}.jpg';
+          var p='$P/${H.toString().padLeft(5,'0')}.jpg';
           await c.takePicture(p);
           await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
           Navigator.of(k).pop();
@@ -91,7 +90,7 @@ class TPS extends State<TP>{
                     CustomPaint(painter:FP(s,o,Colors.red)),
                     CustomPaint(painter:FP(c.value.previewSize.flipped,q,Colors.green))
                   ]
-                ):CPI()));
+                ):Center(child:CircularProgressIndicator())));
 }
 
 class HP extends StatefulWidget{createState()=>HPS();}
@@ -109,7 +108,7 @@ class VPS extends State<VP>{
     w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
     setState((){i=F;});
   }
-  build(k)=>Scaffold(body:Center(child:i?Text('${p*10/Fc}%'):Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
+  build(k)=>Scaffold(body:Center(child:i?Text('${p*10/H}%'):Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
 }
 
 class HPS extends State<HP>{
@@ -117,7 +116,7 @@ class HPS extends State<HP>{
   initState(){super.initState();iI();}
   iI()async{
     if((await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone])).values.where((p)=>p==PermissionStatus.granted).length!=3){
-      await showDialog(context:context, builder:(b)=>AlertDialog(title:Text('App should have requested permissions')));
+      await showDialog(context:context, builder:(b)=>AlertDialog(title:Text('App want theese rights')));
       await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
       return;
     }
@@ -125,8 +124,8 @@ class HPS extends State<HP>{
     var d=await Directory('$D/p').create();
     i=d.listSync().map((e)=>File(e.path)).toList();
     P=d.path;
-    Fc=i.length;
-    if(Fc>0)L=i.last;
+    H=i.length;
+    if(H>0)L=i.last;
     setState((){});
   }
   M(k,w)=>Navigator.of(k).push(MaterialPageRoute(builder:(_)=>w));
