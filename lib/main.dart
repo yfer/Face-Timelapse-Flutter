@@ -109,14 +109,16 @@ class VPS extends State<VP>{
   dispose(){vpc?.dispose();cc?.dispose();super.dispose();}
   compile()async{
     v='$Dd/v.mp4';
-    await FlutterFFmpeg().execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 -pix_fmt yuv420p $v');
+    var f=FlutterFFmpeg();
+    await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $v');
+    var i=await f.getMediaInformation(v);
+    var s=i['streams'][0];
+    var ar=s['width']/s['height'];
     setState((){I=F;});
     vpc=VideoPlayerController.file(File(v));
-    cc=ChewieController(videoPlayerController:vpc,autoPlay:true,looping:true);
+    cc=ChewieController(videoPlayerController:vpc,autoPlay:true,looping:true,aspectRatio:ar);
   }
-  build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(child:Chewie(controller:cc)),appBar:AppBar(),
-      floatingActionButton:I?null:FloatingActionButton(child:Icon(Icons.share),onPressed:()async{ShareExtend.share(v,"video");}));
-
+  build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(child:Chewie(controller:cc)),appBar:AppBar(actions:I?[]:[IconButton(icon:Icon(Icons.share),onPressed:(){ShareExtend.share(v,"video");})]));
 }
 class HPS extends State<HP>{
   var I=[];
