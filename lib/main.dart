@@ -1,4 +1,4 @@
-import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';
+import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';
 var F=false;var X='FaceTimelapse';
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X);}
@@ -108,17 +108,17 @@ Future<Directory> DD()async{return Directory('${(await getExternalStorageDirecto
 PD()async{return Directory('${(await DD()).path}/p').create();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
-  var I=true;var v;
+  var I=true;var v;var vpc;var cc;
   initState(){super.initState();compile();}
+  dispose(){vpc?.dispose();cc?.dispose();super.dispose();}
   compile()async{
     v='${(await DD()).path}/v.mp4';
     await FlutterFFmpeg().execute('-y -r 1 -i ${(await PD()).path}/%05d.jpg -c:v libx264 -pix_fmt yuv420p $v');
     setState((){I=F;});
-//    IconButton(icon:Icon(Icons.play_arrow),
-//        onPressed:()async{var f='${(await DD()).path}/v.mp4';}),
-  //onpop?
+    vpc=VideoPlayerController.file(File(v));
+    cc=ChewieController(videoPlayerController:vpc,autoPlay:true,looping:true);
   }
-  build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(),
+  build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(child:Chewie(controller:cc)),appBar:AppBar(),
       floatingActionButton:I?null:FloatingActionButton(child:Icon(Icons.share),onPressed:()async{ShareExtend.share(v,"video");}));
 
 }
@@ -127,7 +127,6 @@ class HPS extends State<HP>{
   initState(){super.initState();iI();}
   iI()async{
     await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone]);
-    (await DD()).delete(recursive: true);
     var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
     setState((){I=i;});
   }
