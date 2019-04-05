@@ -74,7 +74,6 @@ class TPS extends State<TP>{
       floatingActionButton:FloatingActionButton(
         onPressed:()async{
           await c.stopImageStream();
-          await Future.delayed(Duration(seconds:1));
           var p='$P/${Fc.toString().padLeft(5,'0')}.jpg';
           await c.takePicture(p);
           await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
@@ -103,7 +102,7 @@ class VPS extends State<VP>{
   dispose(){v?.dispose();w?.dispose();super.dispose();}
   K()async{
     var f=FlutterFFmpeg();
-    await f.execute('-y -r 1 -i $P/%05d.jpg -c:v libx264 $m');
+    await f.execute('-y -i $P/%05d.jpg -vf zoompan=d=3:fps=1,framerate=5:interp_start=0:interp_end=255:scene=100 -c:v libx264 $m');
     var s=(await f.getMediaInformation(m))['streams'][0];
     v=VideoPlayerController.file(File(m));
     w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
