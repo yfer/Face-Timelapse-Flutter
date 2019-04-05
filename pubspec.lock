@@ -35,7 +35,7 @@ packages:
       name: chewie
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.9.6"
+    version: "0.9.7"
   collection:
     dependency: transitive
     description:
@@ -67,10 +67,10 @@ packages:
     description:
       path: "packages/flutter_ffmpeg_min-gpl"
       ref: development
-      resolved-ref: "117b3a0b84f103facb8789e74c3e6545f45814e1"
+      resolved-ref: "4a435b46aa9d3ce93a8083651323402121ec08cd"
       url: "git://github.com/tanersener/flutter-ffmpeg.git"
     source: git
-    version: "0.1.1"
+    version: "0.2.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -82,7 +82,7 @@ packages:
       name: image_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.5.0+9"
+    version: "0.5.1"
   matcher:
     dependency: transitive
     description:

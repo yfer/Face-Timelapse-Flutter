@@ -1,26 +1,26 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';
-var F=false;
+var F=false;var X='FaceTimelapse';
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
-class A extends StatelessWidget{build(c)=>MaterialApp(home:HP());}
+class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X);}
 class FDP extends CustomPainter{
   FDP(this.S,this.O,this.C);var S;var O;var C;
-  paint(ca,sz){
+  paint(c,s){
     if(S==null)return;
     var p=Paint()..color=C..style=PaintingStyle.stroke..strokeWidth=5;
 
-    var x=sz.width/S.width;
-    var y=sz.height/S.height;
+    var x=s.width/S.width;
+    var y=s.height/S.height;
 
     for(var o in O){
       for(var l in FaceLandmarkType.values){
         var m=o.getLandmark(l);
         if(m!=null)
-          ca.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10,p);
+          c.drawCircle(Offset((S.width-m.position.dx)*x,m.position.dy*y),10,p);
       }
       var q=S.height*y;
       var r=Rect.fromLTRB(0,q*0.1,S.width*x,q*0.9);
-      ca.drawArc(r,1.57,o.headEulerAngleY/57.29,F,p);
-      ca.drawArc(r,4.71,o.headEulerAngleZ/57.29,F,p);
+      c.drawArc(r,1.57,o.headEulerAngleY/57.29,F,p);
+      c.drawArc(r,4.71,o.headEulerAngleZ/57.29,F,p);
     }
   }
   shouldRepaint(o)=>o!=this;
@@ -51,7 +51,7 @@ class TPS extends State<TP>{
     await iO();
     var a=await availableCameras();
     if(N==a.length)N=0;
-    C=CameraController(a[N++],ResolutionPreset.medium);
+    C=CameraController(a[N],ResolutionPreset.medium);
     await C.initialize();
     C.startImageStream((CameraImage i)async{
       if(D)return;
@@ -84,12 +84,12 @@ class TPS extends State<TP>{
           await Future.delayed(Duration(seconds:1));
           var p='${d.path}/${d.listSync().length.toString().padLeft(5,'0')}.jpg';
           await C.takePicture(p);
-          await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-1 $p');
+          await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
           Navigator.of(c).pop();
         },
         child:Icon(Icons.camera)
       ),
-      appBar:AppBar(actions:[IconButton(icon:Icon(Icons.switch_camera),onPressed:()async{await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
+      appBar:AppBar(actions:[IconButton(icon:Icon(Icons.switch_camera),onPressed:()async{N++;await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
       body:Container(
           constraints:BoxConstraints.expand(),
           child:C?.value?.isInitialized??F?Stack(
@@ -104,30 +104,39 @@ class TPS extends State<TP>{
 
 class HP extends StatefulWidget{createState()=>HPS();}
 
-DD()async{return Directory('${(await getExternalStorageDirectory()).path}/FaceTimelapse').create();}
+Future<Directory> DD()async{return Directory('${(await getExternalStorageDirectory()).path}/$X').create();}
 PD()async{return Directory('${(await DD()).path}/p').create();}
+class VP extends StatefulWidget{createState()=>VPS();}
+class VPS extends State<VP>{
+  var I=true;var v;
+  initState(){super.initState();compile();}
+  compile()async{
+    v='${(await DD()).path}/v.mp4';
+    await FlutterFFmpeg().execute('-y -r 1 -i ${(await PD()).path}/%05d.jpg -c:v libx264 -pix_fmt yuv420p $v');
+    setState((){I=F;});
+//    IconButton(icon:Icon(Icons.play_arrow),
+//        onPressed:()async{var f='${(await DD()).path}/v.mp4';}),
+  //onpop?
+  }
+  build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(),
+      floatingActionButton:I?null:FloatingActionButton(child:Icon(Icons.share),onPressed:()async{ShareExtend.share(v,"video");}));
 
+}
 class HPS extends State<HP>{
   var I=[];
   initState(){super.initState();iI();}
   iI()async{
     await PermissionHandler().requestPermissions([PermissionGroup.storage,PermissionGroup.camera,PermissionGroup.microphone]);
+    (await DD()).delete(recursive: true);
     var i=(await PD()).listSync().map((e)=>File(e.path)).toList();
     setState((){I=i;});
   }
   build(c){
     return Scaffold(
       appBar:AppBar(
+        title:Text(X),
         actions:[
-          IconButton(icon:Icon(Icons.movie_creation),
-              onPressed:()async{
-                await FlutterFFmpeg().execute('-y -r 1 -i ${(await PD()).path}/%05d.jpg -c:v libx264 -t 30 -pix_fmt yuv420p ${(await DD()).path}/v.mp4');
-              }),
-          IconButton(icon:Icon(Icons.play_arrow),
-              onPressed:()async{var f='${(await DD()).path}/v.mp4';}),
-          IconButton(icon:Icon(Icons.share),
-              onPressed:()async{ShareExtend.share('${(await DD()).path}/v.mp4',"video");})
-        ],
+          IconButton(icon:Icon(Icons.movie_creation),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>VP())))],
       ),
       body:Center(child:GridView.count(crossAxisCount:2,padding:EdgeInsets.all(10),children:I.map((s)=>Image.file(s)).toList())),
       floatingActionButton:FloatingActionButton(
