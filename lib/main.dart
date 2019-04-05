@@ -1,5 +1,7 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
 var F=false;var T=true;var X='FaceTimelapse';var Dd;var Pd;
+B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
+CPI()=>Center(child:CircularProgressIndicator());
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FDP extends CustomPainter{
@@ -27,7 +29,7 @@ class FDP extends CustomPainter{
 }
 
 class TP extends StatefulWidget{createState()=>TPS();}
-var N=0;var L;var Fc;
+var Z=0;var L;var Fc;
 class TPS extends State<TP>{
   var C;var D=F;var Q=[],O=[];var S;
   initState(){super.initState();iC();}
@@ -49,8 +51,8 @@ class TPS extends State<TP>{
   iC()async{
     await iO();
     var a=await availableCameras();
-    if(N==a.length)N=0;
-    C=CameraController(a[N],ResolutionPreset.medium);
+    if(Z==a.length)Z=0;
+    C=CameraController(a[Z],ResolutionPreset.medium);
     await C.initialize();
     C.startImageStream((CameraImage i)async{
       if(D)return;
@@ -87,7 +89,7 @@ class TPS extends State<TP>{
         },backgroundColor:Colors.white,
         child:Icon(Icons.camera)
       ),
-      appBar:AppBar(actions:[IconButton(icon:Icon(Icons.switch_camera),onPressed:()async{N++;await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
+      appBar:AppBar(actions:[B(Icons.switch_camera,()async{Z++;await C.stopImageStream();await C.dispose();setState((){C=null;});iC();})]),
       body:Container(
           constraints:BoxConstraints.expand(),
           child:C?.value?.isInitialized??F?Stack(
@@ -97,28 +99,27 @@ class TPS extends State<TP>{
                     CustomPaint(painter:FDP(S,O,Colors.red)),
                     CustomPaint(painter:FDP(C.value.previewSize.flipped,Q,Colors.green))
                   ]
-                ):Center(child:CircularProgressIndicator())));
+                ):CPI()));
 }
 
 class HP extends StatefulWidget{createState()=>HPS();}
-
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
-  var I=T;var v;var vpc;var cc;
+  var I=T;var v='$Dd/v.mp4';var vc;var cc;
   initState(){super.initState();K();}
-  dispose(){vpc?.dispose();cc?.dispose();super.dispose();}
+  dispose(){vc?.dispose();cc?.dispose();super.dispose();}
   K()async{
-    v='$Dd/v.mp4';
     var f=FlutterFFmpeg();
     await f.execute('-y -r 1 -i $Pd/%05d.jpg -c:v libx264 $v');
     var i=await f.getMediaInformation(v);
     var s=i['streams'][0];
     setState((){I=F;});
-    vpc=VideoPlayerController.file(File(v));
-    cc=ChewieController(videoPlayerController:vpc,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
+    vc=VideoPlayerController.file(File(v));
+    cc=ChewieController(videoPlayerController:vc,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
   }
-  build(c)=>Scaffold(body:I?Center(child:CircularProgressIndicator()):Center(child:Chewie(controller:cc)),appBar:AppBar(actions:I?[]:[IconButton(icon:Icon(Icons.share),onPressed:(){ShareExtend.share(v,"video");})]));
+  build(c)=>Scaffold(body:I?CPI():Center(child:Chewie(controller:cc)),appBar:AppBar(actions:I?[]:[B(Icons.share,(){ShareExtend.share(v,"video");})]));
 }
+
 class HPS extends State<HP>{
   var I=[];
   initState(){super.initState();iI();}
@@ -132,13 +133,13 @@ class HPS extends State<HP>{
     if(Fc>0)L=i.last;
     setState((){I=i;});
   }
-
+  M(c,w)=>Navigator.of(c).push(MaterialPageRoute(builder:(_)=>w));
   build(c)=>Scaffold(
       appBar:AppBar(
         title:Text(X),
         actions:[
-          IconButton(icon:Icon(Icons.movie_creation),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>VP()))),
-          IconButton(icon:Icon(Icons.add_a_photo),onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(b)=>TP())).then((_)=>iI()))
+          B(Icons.movie_creation,()=>M(c,VP())),
+          B(Icons.add_a_photo,()=>M(c,TP()).then((_)=>iI())),
         ]
       ),
       body:ScrollGallery(I.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white)
