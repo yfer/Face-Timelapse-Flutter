@@ -80,7 +80,7 @@ class TPS extends State<TP>{
         },backgroundColor:Colors.white,
         child:Icon(Icons.camera)
       ),
-      appBar:AppBar(actions:[B(Icons.switch_camera,()async{Z++;await c.dispose();setState((){c=null;});iC();})]),
+      appBar:AppBar(actions:[B(Icons.sync,()async{Z++;await c.dispose();setState((){c=null;});iC();})]),
       body:Container(
           constraints:BoxConstraints.expand(),
           child:c?.value?.isInitialized??F?Stack(
@@ -108,7 +108,7 @@ class VPS extends State<VP>{
     w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
     setState((){i=F;});
   }
-  build(k)=>Scaffold(body:Center(child:i?Text('${p*10/H}%'):Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
+  build(k)=>Scaffold(body:Center(child:i?Text('${(p*10/H).round()}%'):Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
 }
 
 class HPS extends State<HP>{
@@ -134,7 +134,7 @@ class HPS extends State<HP>{
         title:Text(X),
         actions:[
           B(Icons.movie_creation,()=>M(k,VP())),
-          B(Icons.add_a_photo,()=>M(k,TP()).then((_)=>iI())),
+          B(Icons.add_a_photo,()=>M(k,TP()).then((_)=>iI()))
         ]
       ),
       body:ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:Colors.white)
