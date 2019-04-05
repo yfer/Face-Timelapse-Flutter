@@ -97,18 +97,19 @@ class TPS extends State<TP>{
 class HP extends StatefulWidget{createState()=>HPS();}
 class VP extends StatefulWidget{createState()=>VPS();}
 class VPS extends State<VP>{
-  var i=T,m='$D/v.mp4',v,w;
+  var i=T,m='$D/v.mp4',v,w,p=0;
   initState(){super.initState();K();}
   dispose(){v?.dispose();w?.dispose();super.dispose();}
   K()async{
-    var f=FlutterFFmpeg();
-    await f.execute('-y -i $P/%05d.jpg -vf zoompan=d=3:fps=1,framerate=5:interp_start=0:interp_end=255:scene=100 -c:v libx264 $m');
+    var f=FlutterFFmpeg(),e=RegExp(r"frame=[ ]{3}(\d+)");
+    f.enableLogCallback((_,s)=>setState((){p=int.tryParse(e.firstMatch(s)?.group(1)??'')??p;}));
+    await f.execute('-y -i $P/%05d.jpg -vf zoompan=d=2:fps=1,framerate=5:interp_start=0:interp_end=255:scene=100 $m');
     var s=(await f.getMediaInformation(m))['streams'][0];
     v=VideoPlayerController.file(File(m));
     w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
     setState((){i=F;});
   }
-  build(k)=>Scaffold(body:i?CPI():Center(child:Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
+  build(k)=>Scaffold(body:Center(child:i?Text('${p*10/Fc}%'):Chewie(controller:w)),appBar:AppBar(actions:i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]));
 }
 
 class HPS extends State<HP>{
