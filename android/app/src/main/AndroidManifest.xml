@@ -9,9 +9,9 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        tools:replace="android:label"
-        android:label="face_timelapse"
-        android:icon="@mipmap/ic_launcher">
+        tools:replace="android:label,android:icon"
+        android:label="Face Timelapse"
+        android:icon="@mipmap/baseline_history_black_48">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
