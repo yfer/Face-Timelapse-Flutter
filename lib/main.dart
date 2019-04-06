@@ -1,7 +1,7 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
 var F=false,T=true,X='FaceTimelapse',D,P,Y=0,L,H=0,G=PermissionGroup.values,W=Colors.white;
 B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
-U(i,p)=>FloatingActionButton(child:Icon(Icons.camera),onPressed:p);
+U(i,p)=>FloatingActionButton(child:Icon(i),backgroundColor:W,onPressed:p);
 S(t,b,[List<Widget> a,u])=>Scaffold(appBar:AppBar(title:Text(t),actions:a),body:b,floatingActionButton:u);
 C(v)=>Center(child:v);
 Z(i)=>Size(i.width*1.0,i.height*1.0);
@@ -117,7 +117,7 @@ class VPS extends State<VP>{
 }
 class HP extends StatefulWidget{createState()=>HPS();}
 class HPS extends State<HP>{
-  var i=[];
+  var i=[],p=Icons.add_a_photo;
   initState(){super.initState();iI();}
   iI()async{
     if((await PermissionHandler().requestPermissions([G[2],G[5],G[11]])).values.where((p)=>p.index==2).length!=3){
@@ -134,9 +134,11 @@ class HPS extends State<HP>{
     setState((){});
   }
   N(k,w)=>Navigator.of(k).push(MaterialPageRoute(builder:(_)=>w));
+  t(k)=>()=>N(k,TP()).then((_)=>iI());
   build(k)=>S(
     X,
-    H>0?ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:W):C(Text('Take a photo')),
-    H>0?[B(Icons.movie,()=>N(k,VP()))]:[]..add(B(Icons.add_a_photo,()=>N(k,TP()).then((_)=>iI())))
+    ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:W),
+    H>0?[B(Icons.movie,()=>N(k,VP()))]:[]..add(B(p,t(k))),
+    H>0?null:U(p,t(k))
   );
 }
