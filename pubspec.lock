@@ -72,11 +72,9 @@ packages:
   flutter_ffmpeg:
     dependency: "direct main"
     description:
-      path: "packages/flutter_ffmpeg_min-gpl"
-      ref: development
-      resolved-ref: "4a435b46aa9d3ce93a8083651323402121ec08cd"
-      url: "git://github.com/tanersener/flutter-ffmpeg.git"
-    source: git
+      name: flutter_ffmpeg
+      url: "https://pub.dartlang.org"
+    source: hosted
     version: "0.2.1"
   flutter_scroll_gallery:
     dependency: "direct main"

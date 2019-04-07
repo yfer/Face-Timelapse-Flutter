@@ -25,11 +25,7 @@ dependencies:
   cupertino_icons: ^0.1.2
   share_extend: "^1.0.8"
   path_provider: ^0.5.0+1
-  flutter_ffmpeg:
-    git:
-      url: git://github.com/tanersener/flutter-ffmpeg.git
-      ref: development
-      path: packages/flutter_ffmpeg_min-gpl
+  flutter_ffmpeg: ^0.2.1
 
   video_player: ^0.10.0+4
   chewie: ^0.9.6
