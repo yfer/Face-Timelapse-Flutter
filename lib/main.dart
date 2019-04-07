@@ -1,26 +1,27 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
-var F=false,T=true,X='FaceTimelapse',D,P,Y=0,L,H=0,G=PermissionGroup.values,W=Colors.white,O='Selfie',R=Icons.camera;
+var F=false,T=true,X='FaceTimelapse',D,P,Y=0,L,J=0,G=PermissionGroup.values,E=Colors.white,O='Selfie',R=Icons.camera;
 B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
-U(p)=>FloatingActionButton.extended(icon:Icon(R),backgroundColor:W,onPressed:p,label:Text(O));
+U(p)=>FloatingActionButton.extended(icon:Icon(R),backgroundColor:E,onPressed:p,label:Text(O));
 S(t,b,[List<Widget> a,u])=>Scaffold(appBar:AppBar(title:Text(t),actions:a),body:b,floatingActionButton:u);
 C(v)=>Center(child:v);
 Z(i)=>Size(i.width*1.0,i.height*1.0);
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
 class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
 class FP extends CustomPainter{
-  FP(this.d,this.f,this.c);var d,f,c;
+  FP(this.d,this.f,this.c,this.I);var d,f,c,I;
   paint(k,z){
     if(d!=null){
-      var p=Paint()..color=c..style=PaintingStyle.stroke..strokeWidth=5,x=z.width/d.width,y=z.height/d.height;
+      var p=Paint()..color=c..style=PaintingStyle.stroke..strokeWidth=5,h=d.height,w=d.width,x=z.width/w,y=z.height/h;
       for(var i in f){
         for(var l in FaceLandmarkType.values){
-          var m=i.getLandmark(l);
+          var m=i.getLandmark(l),u=m?.position?.dx;
           if(m!=null)
-            k.drawCircle(Offset((d.width-m.position.dx)*x,m.position.dy*y),10,p);
+            k.drawCircle(Offset((I>0?u:w-u)*x,m.position.dy*y),10,p);
         }
-        var q=d.height*y,r=Rect.fromLTRB(0,q*0.1,d.width*x,q*0.9);
-        k.drawArc(r,1.57,i.headEulerAngleY/57.29,F,p);
-        k.drawArc(r,4.71,i.headEulerAngleZ/57.29,F,p);
+        var q=h*y,r=Rect.fromLTRB(0,q*0.1,w*x,q*0.9);
+        a(z,x)=>k.drawArc(r,z,x/57,F,p);
+        a(1.57,i.headEulerAngleY);
+        a(4.71,i.headEulerAngleZ);
       }
     }
   }
@@ -29,7 +30,7 @@ class FP extends CustomPainter{
 
 class TP extends StatefulWidget{createState()=>TPS();}
 class TPS extends State<TP>{
-  var c,d=F,q=[],o=[],s,V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:T,mode:FaceDetectorMode.accurate)).processImage;
+  var c,d=F,q=[],o=[],s,l,V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:T,mode:FaceDetectorMode.accurate)).processImage;
   initState(){super.initState();iC();}
   iO()async{
     if(L!=null){
@@ -47,11 +48,9 @@ class TPS extends State<TP>{
     await iO();
     var a=(await availableCameras()).reversed.toList();
     if(Y==a.length)Y=0;
-//    var dddd=a[Y].lensDirection;
-
+    l=a[Y].lensDirection.index;
     c=CameraController(a[Y],ResolutionPreset.low);
     await c.initialize();
-
     c.startImageStream((CameraImage i)async{
       if(!d){
         d=T;
@@ -74,6 +73,7 @@ class TPS extends State<TP>{
       }
     });
   }
+  p(f)=>CustomPaint(painter:f);
   build(k)=>S(
       O,
       Container(
@@ -82,16 +82,16 @@ class TPS extends State<TP>{
             fit:StackFit.expand,
             children:[
               CameraPreview(c),
-              CustomPaint(painter:FP(s,o,Colors.red)),
-              CustomPaint(painter:FP(c.value.previewSize.flipped,q,Colors.green))
+              p(FP(s,o,Colors.red,1)),
+              p(FP(c.value.previewSize.flipped,q,Colors.green,l))
             ]
         ):C(CircularProgressIndicator())),
       [B(Icons.sync,()async{Y++;await c.dispose();setState((){c=null;});iC();})],
       U(()async{
         await c.stopImageStream();
-        var p='$P/${H.toString().padLeft(5,'0')}.jpg';
+        var p='$P/${'$J'.padLeft(5,'0')}.jpg';
         await c.takePicture(p);
-        await FlutterFFmpeg().execute('-y -i $p -vf scale=1280:-2 $p');
+        await FlutterFFmpeg().execute('-y -i $p -vf ${l>0?'':'hflip,'}scale=1280:-2 $p');
         Navigator.of(k).pop();
       })
   );
@@ -107,13 +107,13 @@ class VPS extends State<VP>{
     await f.execute('-y -i $P/%05d.jpg -vf zoompan=d=2:fps=1,framerate=5:interp_start=0:interp_end=255:scene=100 $m');
     var s=(await f.getMediaInformation(m))['streams'][0];
     v=VideoPlayerController.file(File(m));
-    w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['width']/s['height']);
+    w=ChewieController(videoPlayerController:v,autoPlay:T,looping:T,aspectRatio:s['height']/s['width']);
     setState((){i=F;});
   }
   build(k)=>S(
     'Movie',
-    C(i?Text('${(p*10/H).round()}%'):Chewie(controller:w)),
-    i?[]:[B(Icons.share,(){ShareExtend.share(m,"video");})]
+    C(i?Text('${(p*10/J).round()}%'):Chewie(controller:w)),
+    i?[]:[B(Icons.share,()=>ShareExtend.share(m,"video"))]
   );
 }
 class HP extends StatefulWidget{createState()=>HPS();}
@@ -122,7 +122,7 @@ class HPS extends State<HP>{
   initState(){super.initState();iI();}
   iI()async{
     if((await PermissionHandler().requestPermissions([G[2],G[5],G[11]])).values.where((p)=>p.index==2).length!=3){
-      await showDialog(context:context,builder:(b)=>AlertDialog(title:Text('App need rights')));
+      await showDialog(context:context,builder:(b)=>AlertDialog(title:Text('Need rights!')));
       await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
       return;
     }
@@ -130,16 +130,16 @@ class HPS extends State<HP>{
     var d=await Directory('$D/p').create();
     i=d.listSync().map((e)=>File(e.path)).toList();
     P=d.path;
-    H=i.length;
-    if(H>0)L=i.last;
+    J=i.length;
+    if(J>0)L=i.last;
     setState((){});
   }
   N(k,w)=>Navigator.of(k).push(MaterialPageRoute(builder:(_)=>w));
   t(k)=>()=>N(k,TP()).then((_)=>iI());
   build(k)=>S(
     X,
-    ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:W),
-    H>0?[B(Icons.movie,()=>N(k,VP()))]:[]..add(B(R,t(k))),
-    H>0?null:U(t(k))
+    ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:E),
+    J>0?[B(Icons.movie,()=>N(k,VP()))]:[]..add(B(R,t(k))),
+    J>0?null:U(t(k))
   );
 }
