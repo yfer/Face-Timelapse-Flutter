@@ -45,29 +45,30 @@ class TPS extends State<TP>{
 
   iC()async{
     await iO();
-    var a=await availableCameras();
+    var a=(await availableCameras()).reversed.toList();
     if(Y==a.length)Y=0;
-    c=CameraController(a[Y],ResolutionPreset.medium);
+//    var dddd=a[Y].lensDirection;
+
+    c=CameraController(a[Y],ResolutionPreset.low);
     await c.initialize();
+
     c.startImageStream((CameraImage i)async{
       if(!d){
         d=T;
         try{
           var b=WriteBuffer();
           i.planes.forEach((p)=>b.putUint8List(p.bytes));
-          var v=FirebaseVisionImageMetadata(
-            rawFormat:i.format.raw,
-            size:Z(i),
-            rotation:ImageRotation.rotation270,
-            planeData:i.planes
-                .map((p)=>FirebaseVisionImagePlaneMetadata(
-                      bytesPerRow:p.bytesPerRow,
-                      height:p.height,
-                      width:p.width
-                    ))
-                .toList()
-          );
-          q=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),v));
+          q=await V(FirebaseVisionImage.fromBytes(b.done().buffer.asUint8List(),FirebaseVisionImageMetadata(
+              rawFormat:i.format.raw,
+              size:Z(i),
+              rotation:ImageRotation.values[(a[Y].sensorOrientation/90).round()],
+              planeData:i.planes
+                  .map((p)=>FirebaseVisionImagePlaneMetadata(
+                  bytesPerRow:p.bytesPerRow,
+                  height:p.height,
+                  width:p.width
+              )).toList()
+          )));
           if(mounted)setState((){});
         }finally{d=F;}
       }
