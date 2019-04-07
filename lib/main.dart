@@ -1,15 +1,16 @@
 import'dart:io';import'package:flutter/services.dart';import'package:flutter/foundation.dart';import'package:flutter/material.dart';import'package:share_extend/share_extend.dart';import'package:path_provider/path_provider.dart';import'package:flutter_ffmpeg/flutter_ffmpeg.dart';import'package:permission_handler/permission_handler.dart';import'package:camera/camera.dart';import'package:firebase_ml_vision/firebase_ml_vision.dart';import'package:video_player/video_player.dart';import'package:chewie/chewie.dart';import'package:flutter_scroll_gallery/flutter_scroll_gallery.dart';
-var F=false,T=true,N,X='FaceTimelapse',D,P,Y=0,L,J=0,G=PermissionGroup.values,S,E=Colors.white,O='Selfie',R=Icons.camera;
+var F=false,T=true,N,X='FaceTimelapse',D,P,Y=0,L,J=0,G=PermissionGroup.values,S,O='Selfie',R=Icons.camera;
 B(i,p)=>IconButton(icon:Icon(i),onPressed:p);
-U(p)=>FloatingActionButton.extended(icon:Icon(R),backgroundColor:E,onPressed:p,label:Text(O));
+U(p)=>FloatingActionButton.extended(icon:Icon(R),backgroundColor:Colors.white,onPressed:p,label:Text(O));
 C(t,b,[List<Widget> a,u])=>Scaffold(appBar:AppBar(title:Text(t),actions:a),body:b,floatingActionButton:u);
 Z(i)=>Size(i.width*1.0,i.height*1.0);
 iS()=>Image.file(File.fromUri(L.uri)).image.resolve(ImageConfiguration()).completer.addListener((i,b)=>S=Z(i.image));
 Po(k)=>Navigator.of(k).pop();
+Q()=>FlutterFFmpeg();
 main(){SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);runApp(A());}
-class A extends StatelessWidget{build(c)=>MaterialApp(home:HP(),title:X,theme:ThemeData.dark());}
-class FP extends CustomPainter{
-  FP(this.d,this.f,this.c,this.I);var d,f,c,I;
+class A extends StatelessWidget{build(c)=>MaterialApp(home:E(),title:X,theme:ThemeData.dark());}
+class W extends CustomPainter{
+  W(this.d,this.f,this.c,this.I);var d,f,c,I;
   paint(k,z){
     if(d!=N){
       var p=Paint()..color=c..style=PaintingStyle.stroke..strokeWidth=5,h=d.height,w=d.width,x=z.width/w,y=z.height/h;
@@ -28,8 +29,8 @@ class FP extends CustomPainter{
   }
   shouldRepaint(o)=>o!=this;
 }
-class TP extends StatefulWidget{createState()=>TPS();}
-class TPS extends State<TP>{
+class TP extends StatefulWidget{createState()=>_T();}
+class _T extends State<TP>{
   var c,d=F,q=[],o=[],l,V=FirebaseVision.instance.faceDetector(FaceDetectorOptions(enableLandmarks:T,mode:FaceDetectorMode.accurate)).processImage;
   initState(){super.initState();iC();}
   iO()async{
@@ -76,27 +77,28 @@ class TPS extends State<TP>{
             fit:StackFit.expand,
             children:[
               CameraPreview(c),
-              p(FP(S,o,Colors.red,1)),
-              p(FP(c.value.previewSize.flipped,q,Colors.green,l))
+              p(W(S,o,Colors.red,1)),
+              p(W(c.value.previewSize.flipped,q,Colors.green,l))
             ]
         ):N),
       [B(Icons.sync,()async{Y++;await c.dispose();setState((){c=N;});iC();})],
       U(()async{
         await c.stopImageStream();
         var p='$P/${'$J'.padLeft(5,'0')}.jpg';
+        await Future.delayed(Duration(seconds:1));
         await c.takePicture(p);
-        await FlutterFFmpeg().execute('-y -i $p -vf ${l>0?'':'hflip,'}scale=1280:-2 $p');
+        await Q().execute('-y -i $p -vf ${l>0?'':'hflip,'}scale=1280:-2 $p');
         Po(k);
       })
   );
 }
-class VP extends StatefulWidget{createState()=>VPS();}
-class VPS extends State<VP>{
+class VP extends StatefulWidget{createState()=>_V();}
+class _V extends State<VP>{
   var i=T,m='$D/v.mp4',v,w,p=0;
   initState(){super.initState();K();}
   dispose(){v?.dispose();w?.dispose();super.dispose();}
   K()async{
-    var f=FlutterFFmpeg(),e=RegExp(r"frame=[ ]{3}(\d+)");
+    var f=Q(),e=RegExp(r"frame=[ ]{3}(\d+)");
     f.enableLogCallback((_,s)=>setState((){p=int.tryParse(e.firstMatch(s)?.group(1)??'')??p;}));
     await f.execute('-y -i $P/%05d.jpg -vf zoompan=d=2:fps=1,framerate=5:interp_start=0:interp_end=255:scene=100 $m');
     v=VideoPlayerController.file(File(m));
@@ -109,8 +111,8 @@ class VPS extends State<VP>{
     i?[]:[B(Icons.share,()async{await ShareExtend.share(m,"video");Po(k);})]
   );
 }
-class HP extends StatefulWidget{createState()=>HPS();}
-class HPS extends State<HP>{
+class E extends StatefulWidget{createState()=>_E();}
+class _E extends State<E>{
   var i=[];
   initState(){super.initState();iI();}
   iI()async{
@@ -131,7 +133,7 @@ class HPS extends State<HP>{
   t(k)=>()=>n(k,TP()).then((_)=>iI());
   build(k)=>C(
     X,
-    ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover,borderColor:E),
+    ScrollGallery(i.map((s)=>Image.file(s).image).toList().reversed.toList(),fit:BoxFit.cover),
     J>0?[B(Icons.movie,()=>n(k,VP()))]:[]..add(B(R,t(k))),
     J>0?N:U(t(k))
   );
