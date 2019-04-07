@@ -1,7 +1,7 @@
 # Face Timelapse
 
 This is app that helps you to do a face images timelapse. 
-Due to restrictions of used plugins it will run only on Android,SDK>=24.
+Due to restrictions of used plugins it will run only on Android,SDK>=24, also run only on arm64-v8a
 Sorry, code is a bit obfuscated(by hand), but there is no other way to fit all functions.
 Compile and run with 'flutter run --release';
 
