@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:face_timelapse/face_marks_painter.dart';
+import 'package:face_timelapse/face_timelapse_marks_painter.dart';
 import 'package:face_timelapse/utils.dart';
 //import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/foundation.dart';
@@ -135,15 +136,16 @@ class _PhotoshootPageState extends State<PhotoshootPage> {
         child: cameraController?.value?.isInitialized ?? false
             ? Stack(fit: StackFit.expand, children: [
           CameraPreview(cameraController),
-          CustomPaint(
-              painter: FaceMarksPainter(
-                  widget.size, oldFaces, Colors.red, false)),
-          CustomPaint(
-              painter: FaceMarksPainter(
-                  cameraController.value.previewSize.flipped,
-                  newFaces,
-                  Colors.green,
-                  isFrontCamera(lensDirection)))
+          CustomPaint(painter: FaceTimelapseMarksPainter(widget.size, cameraController.value.previewSize.flipped, oldFaces, newFaces, false, isFrontCamera(lensDirection)))
+//          CustomPaint(
+//              painter: FaceMarksPainter(
+//                  widget.size, oldFaces, Colors.red, false)),
+//          CustomPaint(
+//              painter: FaceMarksPainter(
+//                  cameraController.value.previewSize.flipped,
+//                  newFaces,
+//                  Colors.green,
+//                  isFrontCamera(lensDirection)))
         ])
             : Center(
           child: CircularProgressIndicator(),
