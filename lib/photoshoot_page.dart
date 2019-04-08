@@ -111,10 +111,17 @@ class _PhotoshootPageState extends State<PhotoshootPage> {
     initCamera();
   }
 
+  IconData directionIcon(CameraLensDirection lensDirection){
+    switch(lensDirection){
+      case CameraLensDirection.front: return Icons.camera_front;
+      case CameraLensDirection.back: return Icons.camera_rear;
+      default: return Icons.camera;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     List<IconButton> actions = [
-      IconButton(icon: Icon(Icons.sync), onPressed: changeCamera)
+      IconButton(icon: Icon(directionIcon(lensDirection)), onPressed: changeCamera)
     ];
     var fab = FloatingActionButton.extended(
         icon: Icon(Icons.camera),
