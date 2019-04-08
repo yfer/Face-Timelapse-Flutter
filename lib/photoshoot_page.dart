@@ -80,7 +80,7 @@ class _PhotoshootPageState extends State<PhotoshootPage> {
           var imageMetadata = FirebaseVisionImageMetadata(
               rawFormat: camImage.format.raw,
               size: size,
-              rotation: ImageRotation.rotation0,
+              rotation: rotation,
               planeData: planeData);
           var image = FirebaseVisionImage.fromBytes(bytes, imageMetadata);
           newFaces = await getFaces(image);
