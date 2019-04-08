@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:face_timelapse/face_marks_painter.dart';
 import 'package:face_timelapse/utils.dart';
-import 'package:firebase_ml_vision/firebase_ml_vision.dart';
+//import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+
+import 'package:firebase_face_contour/firebase_face_contour.dart';
 
 class PhotoshootPage extends StatefulWidget {
   final int imageCount;
@@ -22,7 +24,7 @@ class PhotoshootPage extends StatefulWidget {
 Future<List<Face>> getFaces(FirebaseVisionImage image) =>
     FirebaseVision.instance
         .faceDetector(FaceDetectorOptions(
-        enableLandmarks: true, mode: FaceDetectorMode.accurate))
+        enableLandmarks: true, mode: FaceDetectorMode.accurate, enableContours: true))
         .processImage(image);
 
 class _PhotoshootPageState extends State<PhotoshootPage> {
@@ -78,7 +80,7 @@ class _PhotoshootPageState extends State<PhotoshootPage> {
           var imageMetadata = FirebaseVisionImageMetadata(
               rawFormat: camImage.format.raw,
               size: size,
-              rotation: rotation,
+              rotation: ImageRotation.rotation0,
               planeData: planeData);
           var image = FirebaseVisionImage.fromBytes(bytes, imageMetadata);
           newFaces = await getFaces(image);

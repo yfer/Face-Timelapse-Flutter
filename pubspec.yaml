@@ -32,7 +32,12 @@ dependencies:
   permission_handler: '^2.2.0'
 
   camera: ^0.4.3+2
-  firebase_ml_vision: ^0.6.0+2
+#  firebase_ml_vision: ^0.6.0+2
+  firebase_face_contour:
+    git:
+      url: git://github.com/giandifra/flutter-face-contour-plugin.git
+      ref: master
+
 
   flutter_scroll_gallery: ^0.1.0
 

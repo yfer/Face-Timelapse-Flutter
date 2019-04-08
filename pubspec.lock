@@ -57,13 +57,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2"
-  firebase_ml_vision:
+  firebase_face_contour:
     dependency: "direct main"
     description:
-      name: firebase_ml_vision
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.6.0+2"
+      path: "."
+      ref: master
+      resolved-ref: "0f8412b37e7f25835e04f1dfecf1a88b59e5136b"
+      url: "git://github.com/giandifra/flutter-face-contour-plugin.git"
+    source: git
+    version: "0.1.0"
   flutter:
     dependency: "direct main"
     description: flutter
